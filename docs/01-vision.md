@@ -1,7 +1,7 @@
 # 01 · Vision Board & Lean Canvas
 
 **Product:** Swing Trading Dashboard — weekly newsletter
-**Owner:** _Your name_ · **Version:** 1.0 · **Last updated:** 2026-10-23
+**Owner:**Arindam Patranabis · **Version:** 1.0 · **Last updated:** 2026-10-23
 **Status:** Approved for build (Phase 0)
 
 ---
