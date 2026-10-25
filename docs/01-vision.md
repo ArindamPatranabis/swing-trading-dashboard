@@ -1,7 +1,7 @@
 # 01 · Vision Board & Lean Canvas
 
 **Product:** Swing Trading Dashboard — on-demand research dashboard
-**Owner:** _Your name_ · **Version:** 1.1 · **Last updated:** 2026-10-23
+**Owner:** Arindam Patranabis · **Version:** 1.1 · **Last updated:** 2026-10-23
 **Status:** Draft for review (Phase 0)
 
 > **Changes in v1.1:**
