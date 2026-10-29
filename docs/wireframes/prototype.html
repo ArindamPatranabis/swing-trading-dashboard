@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swing Dashboard Wireframe</title>
+<!--
+  Swing Trading Dashboard - low-fidelity clickable wireframe.
+  Self-contained: no network, no build step. Open this file in any browser.
+  Sample data only; tickers are fictional. Requirement IDs refer to docs/03-prd.md v1.1.
+  Screens: #dashboard (default), #archive, #states
+-->
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F4F4F2;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1F1F1F}
+a{color:#1D4ED8}a:hover{color:#1E3A8A}
+.wrap{max-width:1366px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:20px}
+.card{background:#FFFFFF;border:1px solid #D4D4D0;border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.st{margin:0;font-size:18px;font-weight:700;color:#1F1F1F}
+.q{margin:0;font-size:13px;color:#5E5E5A}
+.meta{font-size:13px;color:#5E5E5A}
+.tag{font-size:11px;font-weight:600;padding:2px 6px;border-radius:4px;border:1px solid #C9C9C4;color:#4A4A46;background:#FAFAF8;font-family:ui-monospace,Consolas,Menlo,monospace;white-space:nowrap}
+.chip{font-size:11px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.scroll{overflow-x:auto;border:1px solid #E2E2DE;border-radius:6px}
+.tr{display:grid;gap:12px;padding:9px 12px;border-top:1px solid #ECECE8;font-size:13px;color:#1F1F1F;align-items:center;font-variant-numeric:tabular-nums}
+.th{border-top:none;background:#F7F7F5;font-size:11px;font-weight:700;color:#5E5E5A;text-transform:uppercase;letter-spacing:.04em}
+.sub{font-size:12px;color:#5E5E5A}
+.col{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.warn{background:#FFF4E5;border:1px solid #F2C98A;color:#6B3A00;border-radius:6px;padding:10px 12px;font-size:13px}
+.unav{background:#EDEDEB;border:1px dashed #8A8A85;border-radius:6px;padding:18px;font-size:14px;color:#2E2E2B;display:flex;flex-direction:column;gap:4px}
+.soon{border:1px dashed #A8A8A3;border-radius:8px;padding:18px 20px;color:#4A4A46;font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;background:#FAFAF8}
+.btn{font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:0 16px;border-radius:6px;border:1px solid #C9C9C4;background:#FFFFFF;color:#1F1F1F;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
+.btnp{background:#1D4ED8;border-color:#1D4ED8;color:#FFFFFF}
+.tab{font:inherit;font-size:13px;font-weight:600;min-height:44px;padding:0 14px;border-radius:6px;border:1px solid #C9C9C4;background:#FFFFFF;color:#3D3D3A;cursor:pointer}
+.tab[aria-pressed="true"]{background:#1F1F1F;color:#FFFFFF;border-color:#1F1F1F}
+.pill{font-size:11px;font-weight:700;padding:2px 6px;border-radius:4px;background:#FFE7C7;color:#6B3A00;white-space:nowrap}
+.tile{border:1px solid #E2E2DE;border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.tl{font-size:12px;color:#5E5E5A}
+.tv{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.legend{font-size:12px;color:#5E5E5A;display:flex;flex-wrap:wrap;gap:6px 16px}
+.wn{background:#FFFFFF;border:1px solid #B9CBEB;border-radius:4px;padding:2px 8px;font-size:13px;color:#1D3F8A;white-space:nowrap}
+.def{text-decoration:underline dotted #8A8A85;text-underline-offset:3px;cursor:help}
+.inp{font:inherit;font-size:14px;font-weight:400;min-height:44px;padding:0 10px;border:1px solid #8A8A85;border-radius:6px;background:#FFFFFF;color:#1F1F1F}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#3D3D3A}
+.nw{font-size:11px;font-weight:400;color:#5E5E5A}
+.params{border:1px solid #E2E2DE;border-radius:6px;background:#F7F7F5}
+.params summary{cursor:pointer;padding:12px;font-size:13px;font-weight:700;color:#1F1F1F}
+.pbody{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;padding:0 12px 12px}
+.grid{display:grid;gap:12px}
+.proto{background:#26262A;color:#F2F2F0;font-size:13px}
+.proto .in{max-width:1366px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.proto label{display:flex;align-items:center;gap:6px}
+.proto select{font:inherit;font-size:13px;min-height:32px;border-radius:4px;border:1px solid #6B6B66;background:#FFFFFF;color:#1F1F1F}
+.proto .navb{font:inherit;font-size:13px;font-weight:700;min-height:36px;padding:0 12px;border-radius:4px;border:1px solid #6B6B66;background:transparent;color:#F2F2F0;cursor:pointer}
+.proto .navb[aria-pressed="true"]{background:#F2F2F0;color:#1F1F1F}
+.mini .tr{grid-template-columns:56px 1fr 40px 50px;font-size:12px;padding:7px 10px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- state ----------
+  var SCREENS = ['dashboard', 'archive', 'states'];
+  var S = {
+    screen: SCREENS.indexOf(location.hash.slice(1)) >= 0 ? location.hash.slice(1) : 'dashboard',
+    release: 'v1.0', econ: 'ok', mom: 'ok', per: 'ok', vlt: 'ok', regime: 'Risk-on', flag: true, holiday: false,
+    momTab: 'A', perTab: 'healthy', cap: '50000', risk: '1',
+    minCap: '2', rsMin: '80', perThr: '15', fMin: '7', snap: '26', open: {}
+  };
+
+  // ---------- sample data (fictional tickers) ----------
+  var DEFS = {
+    'CPI': "Consumer Price Index: how fast prices rise for what households buy. Core leaves out food and energy, which jump around.",
+    'PCE': "Personal Consumption Expenditures price index: the Fed's preferred inflation measure. Core leaves out food and energy.",
+    'ISM Manufacturing PMI': "Monthly survey of factory purchasing managers. Above 50 means manufacturing is growing; below 50 means it is shrinking.",
+    'ISM Services PMI': "Monthly survey of service-company purchasing managers. Above 50 means services are growing; below 50 means shrinking.",
+    'GDP': "Gross Domestic Product: the total value of everything the US produces. Shown as the quarter's growth at a yearly rate.",
+    'Fed funds target': "The interest-rate range the Federal Reserve sets for overnight lending between banks. Changed at FOMC meetings.",
+    'Retail sales': "Monthly change in spending at stores and online. Ex-autos leaves out car sales, which swing a lot.",
+    'Light vehicle sales': "New cars and light trucks sold, shown as a yearly pace adjusted for the season. A read on consumer confidence.",
+    'Jobs report': "Monthly employment report. NFP = jobs added outside farming; unemployment rate = share of job seekers without work.",
+    'Jobless claims': "Weekly count of new unemployment-benefit filings. The 4-week average smooths the noise; continuing claims = people still on benefits."
+  };
+  var ECON = [
+    ['CPI', 'Headline / core', '2.9% / 3.0%', '3.0% / 3.1%', '−0.1 / −0.1', 'YoY', 'Oct 14', 'Thu Nov 12 · 8:30 AM', 'in 17 days', 0, 0],
+    ['PCE', 'Headline / core', '2.6% / 2.8%', '2.7% / 2.9%', '−0.1 / −0.1', 'YoY', 'Sep 26', 'Fri Oct 30 · 8:30 AM', 'in 4 days', 1, 0],
+    ['ISM Manufacturing PMI', 'Below 50: contraction', '49.1', '48.7', '+0.4', 'Index level', 'Oct 1', 'Mon Nov 2 · 10:00 AM', 'in 7 days', 1, 1],
+    ['ISM Services PMI', 'Above 50: expansion', '52.3', '51.8', '+0.5', 'Index level', 'Oct 5', 'Wed Nov 4 · 10:00 AM', 'in 9 days', 0, 1],
+    ['GDP', 'Q2 · third estimate', '2.1%', '1.8%', '+0.3', 'QoQ annualized', 'Sep 25', 'Thu Oct 29 · 8:30 AM (Q3 advance)', 'in 3 days', 1, 0],
+    ['Fed funds target', 'FOMC decision', '3.50–3.75%', '3.75–4.00%', '−0.25', 'Target range', 'Sep 16', 'Wed Oct 28 · 2:00 PM', 'in 2 days', 1, 0],
+    ['Retail sales', 'Headline / ex-autos', '0.4% / 0.3%', '0.6% / 0.5%', '−0.2 / −0.2', 'MoM', 'Oct 16', 'Tue Nov 17 · 8:30 AM', 'in 22 days', 0, 0],
+    ['Light vehicle sales', 'Units', '15.8M', '16.1M', '−0.3M', 'SAAR', 'Oct 1', 'Date not confirmed', '—', 0, 0],
+    ['Jobs report', 'NFP / unemployment rate', '+142K / 4.3%', '+118K / 4.3%', '+24K / 0.0', 'MoM change / rate', 'Oct 2', 'Fri Nov 6 · 8:30 AM', 'in 11 days', 0, 0],
+    ['Jobless claims', 'Initial / 4-wk avg / continuing', '228K / 231K / 1.92M', '236K / 233K / 1.94M', '−8K / −2K / −0.02M', 'Weekly', 'Thu Oct 22', 'Thu Oct 29 · 8:30 AM', 'in 3 days', 1, 0]
+  ];
+  var SECTORS = [
+    ['1', 'XLK', 'Technology', '92', '2 (up 1)', '+4.1%', 'Leading'],
+    ['2', 'XLC', 'Communication Services', '88', '1 (down 1)', '+3.2%', 'Weakening'],
+    ['3', 'XLI', 'Industrials', '81', '4 (up 1)', '+2.6%', 'Leading'],
+    ['4', 'XLF', 'Financials', '77', '3 (down 1)', '+1.9%', 'Weakening'],
+    ['5', 'XLY', 'Consumer Discretionary', '70', '7 (up 2)', '+2.2%', 'Improving'],
+    ['6', 'XLB', 'Materials', '58', '6 (same)', '+0.4%', 'Lagging'],
+    ['7', 'XLV', 'Health Care', '52', '5 (down 2)', '−0.8%', 'Lagging'],
+    ['8', 'XLE', 'Energy', '47', '10 (up 2)', '+1.1%', 'Improving'],
+    ['9', 'XLU', 'Utilities', '41', '8 (down 1)', '−1.5%', 'Lagging'],
+    ['10', 'XLRE', 'Real Estate', '33', '9 (down 1)', '−2.3%', 'Lagging'],
+    ['11', 'XLP', 'Consumer Staples', '28', '11 (same)', '−1.9%', 'Lagging']
+  ];
+  var QCOL = { Leading: '#2E7D32', Weakening: '#B7791F', Improving: '#2F56C6', Lagging: '#C0392B' };
+  var CAPS = { ALPH: 412, BRVO: 38.5, CHRL: 4.2, DLTA: 96.1, ECHO: 1.6, FXTR: 22.8, GLFX: 2.4, KILO: 57.3, ICON: 188, MIKE: 31.0, NOVA: 14.7, OSCR: 9.6, PAPA: 1.4, QBEC: 18.2, SIER: 6.9, TANG: 27.5, UNIF: 11.3, VIKN: 3.1 };
+  var ENTRY = { ALPH: 158.40, BRVO: 96.75, CHRL: 66.20, DLTA: 221.30, ECHO: 50.60, FXTR: 128.90, GLFX: 74.10, KILO: 112.50 };
+  var KIJUN = { ALPH: 147.60, BRVO: 91.20, GLFX: 69.85, KILO: 105.30 };
+  var MOM_A = [
+    { t: 'ALPH', sector: 'Technology', rs: 97, rsi: '64.2', tag: 'Strong', wk: '+3.1%', ma: '+8.4%', atr: 2.9, earn: 'Wed Nov 4', soon: true },
+    { t: 'BRVO', sector: 'Industrials', rs: 94, rsi: '58.7', tag: 'Strong', wk: '+1.8%', ma: '+5.2%', atr: 2.1, earn: 'Thu Nov 19', soon: false },
+    { t: 'CHRL', sector: 'Health Care', rs: 91, rsi: '46.3', tag: 'Pullback', wk: '−1.2%', ma: '+1.9%', atr: 2.4, earn: 'Wed Dec 2', soon: false },
+    { t: 'DLTA', sector: 'Communication Svcs', rs: 89, rsi: '61.0', tag: 'Strong', wk: '+2.4%', ma: '+6.7%', atr: 3.3, earn: 'Thu Oct 29', soon: true },
+    { t: 'ECHO', sector: 'Financials', rs: 86, rsi: '44.8', tag: 'Pullback', wk: '−0.9%', ma: '+1.1%', atr: 1.8, earn: 'Fri Jan 15', soon: false },
+    { t: 'FXTR', sector: 'Consumer Disc.', rs: 82, rsi: '55.5', tag: 'Strong', wk: '+0.7%', ma: '+3.9%', atr: 2.7, earn: 'Thu Nov 12', soon: false }
+  ];
+  var MOM_B = [
+    { t: 'ALPH', sector: 'Technology', rs: 97, brk: 'Fresh · 3 days ago', earn: 'Wed Nov 4', soon: true },
+    { t: 'BRVO', sector: 'Industrials', rs: 94, brk: '—', earn: 'Thu Nov 19', soon: false },
+    { t: 'GLFX', sector: 'Materials', rs: 88, brk: 'Fresh · 1 day ago', earn: 'Tue Nov 10', soon: false },
+    { t: 'KILO', sector: 'Industrials', rs: 84, brk: '—', earn: 'Mon Nov 23', soon: false }
+  ];
+  var PER = {
+    healthy: { label: 'Healthy re-rating', rule: function (t) { return 'Healthy: forward PE up ' + t + '% or more vs its 52-week median, and forward EPS estimates rising.'; }, rows: [
+      { t: 'ALPH', sector: 'Technology', pe: '31.6', med: '26.4', chg: 19.7, eps: 'Rising', earn: 'Wed Nov 4', soon: true },
+      { t: 'ICON', sector: 'Technology', pe: '28.4', med: '23.9', chg: 18.8, eps: 'Rising', earn: 'Tue Nov 17', soon: false },
+      { t: 'KILO', sector: 'Industrials', pe: '22.1', med: '18.6', chg: 18.8, eps: 'Rising', earn: 'Mon Nov 23', soon: false } ] },
+    stretched: { label: 'Stretched', rule: function (t) { return 'Stretched: forward PE up ' + t + '% or more, but EPS estimates flat or falling.'; }, rows: [
+      { t: 'MIKE', sector: 'Consumer Disc.', pe: '41.2', med: '33.5', chg: 23.0, eps: 'Flat', earn: 'Fri Nov 6', soon: true },
+      { t: 'NOVA', sector: 'Technology', pe: '36.8', med: '30.9', chg: 19.1, eps: 'Falling', earn: 'Wed Dec 9', soon: false } ] },
+    derating: { label: 'De-rating', rule: function (t) { return 'De-rating: forward PE down ' + t + '% or more vs its 52-week median.'; }, rows: [
+      { t: 'OSCR', sector: 'Health Care', pe: '13.2', med: '16.4', chg: -19.5, eps: 'Falling', earn: 'Thu Nov 5', soon: true },
+      { t: 'PAPA', sector: 'Consumer Staples', pe: '17.0', med: '20.3', chg: -16.3, eps: 'Flat', earn: 'Tue Dec 1', soon: false } ] }
+  };
+  var VLT = [
+    { t: 'QBEC', sector: 'Energy', pe: '9.8 vs 12.4', fcf: '8.1%', roe: '21%', de: '0.42', f: 8, score: '86', earn: 'Tue Nov 3' },
+    { t: 'SIER', sector: 'Materials', pe: '11.6 vs 15.2', fcf: '6.9%', roe: '18%', de: '0.55', f: 7, score: '79', earn: 'Thu Nov 12' },
+    { t: 'TANG', sector: 'Health Care', pe: '14.1 vs 19.8', fcf: '6.2%', roe: '24%', de: '0.31', f: 8, score: '77', earn: 'Wed Nov 18' },
+    { t: 'UNIF', sector: 'Industrials', pe: '15.3 vs 19.0', fcf: '5.8%', roe: '17%', de: '0.68', f: 7, score: '71', earn: 'Tue Dec 8' },
+    { t: 'VIKN', sector: 'Consumer Staples', pe: '16.9 vs 20.3', fcf: '5.4%', roe: '16%', de: '0.87', f: 7, score: '66', earn: 'Thu Jan 7' }
+  ];
+  var CONF = [
+    { t: 'ALPH', sector: 'Technology', n: '3', mods: ['Momentum A', 'Momentum B', 'PE re-rating · healthy'] },
+    { t: 'BRVO', sector: 'Industrials', n: '2', mods: ['Momentum A', 'Momentum B'] },
+    { t: 'KILO', sector: 'Industrials', n: '2', mods: ['Momentum B', 'PE re-rating · healthy'] }
+  ];
+  var PICKS = [
+    ['Sep 28', 'BRVO', 'Momentum A', '+2.1%', '+3.8%', '+6.0%', '+3.2 pp'],
+    ['Sep 28', 'QBEC', 'Value Long Term', '−0.6%', '+1.2%', '+2.4%', '−0.4 pp'],
+    ['Oct 5', 'ALPH', 'Momentum B', '+3.4%', '+5.9%', '—', '—'],
+    ['Oct 12', 'MIKE', 'PE Re-rating', '−1.8%', '−2.5%', '—', '—'],
+    ['Oct 19', 'CHRL', 'Momentum A', '+0.9%', '—', '—', '—']
+  ];
+  var REGIMES = {
+    'Risk-on': { bg: '#E7EEF9', fg: '#1D3F8A', rule: 'SPY above its 50- and 200-day MA, and VIX under 20', vix: '15.8', vixWk: '−1.2', spx: '+1.4%', ndx: '+2.0%', dxy: '99.8', dxyWk: '−0.4%', move: '88', moveWk: '−6' },
+    'Caution': { bg: '#FFE7C7', fg: '#6B3A00', rule: 'SPY above its 200-day MA only, or VIX between 20 and 30', vix: '23.4', vixWk: '+3.9', spx: '−1.1%', ndx: '−1.6%', dxy: '101.2', dxyWk: '+0.9%', move: '112', moveWk: '+14' },
+    'Risk-off': { bg: '#3D3D3A', fg: '#FFFFFF', rule: 'SPY below its 200-day MA, or VIX over 30', vix: '34.1', vixWk: '+9.7', spx: '−4.8%', ndx: '−6.2%', dxy: '103.9', dxyWk: '+2.1%', move: '141', moveWk: '+31' }
+  };
+  var SNAPS = [
+    { id: '26', label: 'Mon Oct 26', time: '6:42 PM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] },
+    { id: '23', label: 'Fri Oct 23', time: '7:05 PM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'partial (93%)', '5']] },
+    { id: '22', label: 'Thu Oct 22', time: '9:18 PM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] },
+    { id: '20', label: 'Tue Oct 20', time: '8:31 PM', mods: [['Economic Data', '0.1.0', 'unavailable', '0'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] },
+    { id: '17', label: 'Sat Oct 17', time: '10:12 AM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] },
+    { id: '14', label: 'Wed Oct 14', time: '7:47 PM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] },
+    { id: '12', label: 'Mon Oct 12', time: '6:55 PM', mods: [['Economic Data', '0.1.0', 'ok', '11'], ['Momentum · Screen A', '0.1.0', 'ok', '6']] }
+  ];
+
+  // ---------- helpers ----------
+  function when(c, s) { return c ? s : ''; }
+  function tag(t, extra) { return '<span class="tag"' + (extra ? ' style="' + extra + '"' : '') + '>' + t + '</span>'; }
+  function money(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function whole(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
+  function num(v, d) { var n = parseFloat(v); return isFinite(n) ? n : d; }
+  function pressed(on) { return ' aria-pressed="' + (on ? 'true' : 'false') + '"'; }
+  function opts(list, cur) { return list.map(function (o) { return '<option' + (o === cur ? ' selected' : '') + '>' + o + '</option>'; }).join(''); }
+  var CHIPS = { 'ok': ['OK', '#E7EEF9', '#1D3F8A'], 'partial': ['PARTIAL', '#FFE7C7', '#6B3A00'], 'unavailable': ['UNAVAILABLE', '#3D3D3A', '#FFFFFF'], 'fewer than 3': ['OK · FEW RESULTS', '#E7EEF9', '#1D3F8A'] };
+  function status(v) {
+    var c = CHIPS[v] || CHIPS.ok;
+    return { chip: '<span class="chip" style="background:' + c[1] + ';color:' + c[2] + '">' + c[0] + '</span>', partial: v === 'partial', unavailable: v === 'unavailable', few: v === 'fewer than 3', table: v === 'ok' || v === 'partial' };
+  }
+  function soonCard(name, rel, extra) {
+    return '<section class="soon"><strong style="color:#1F1F1F">' + name + '</strong><span>Coming soon' + (extra || '') + '</span>' + tag(rel, 'margin-left:auto') + '</section>';
+  }
+  function details(key, summary, body) {
+    return '<details class="params" data-open="' + key + '"' + (S.open[key] ? ' open' : '') + '><summary>' + summary + '</summary><div class="pbody">' + body + '</div></details>';
+  }
+  function field(label, k, attrs, width, notWired) {
+    var v = notWired ? ' value="' + k + '"' : ' value="' + S[k] + '" data-k="' + k + '"';
+    return '<label class="fl">' + label + (notWired ? ' <span class="nw">not wired in wireframe</span>' : '') + '<input class="inp" ' + attrs + v + ' style="width:' + width + 'px"></label>';
+  }
+  function tickerCell(t) { return '<span class="col"><strong>' + t + '</strong><span class="sub">' + (CAPS[t] != null ? '$' + CAPS[t].toFixed(1) + 'B cap' : '') + '</span></span>'; }
+  function earnCell(r, v2) { return '<span class="row">' + r.earn + when(v2 && r.soon, '<span class="pill">within 10 days</span>') + '</span>'; }
+
+  // ---------- dashboard ----------
+  function dashboard() {
+    var rels = ['v0.1 MVP', 'v0.2', 'v0.3', 'v1.0'];
+    var r = Math.max(0, rels.indexOf(S.release));
+    var v2 = r >= 1, v3 = r >= 2;
+    var asOf = S.holiday ? 'Fri Oct 23 close' : 'Mon Oct 26 close';
+    var econ = status(S.econ), mom = status(S.mom), per = status(S.per), vlt = status(S.vlt);
+    var reg = REGIMES[S.regime];
+
+    // parameters
+    var minCap = Math.max(0, num(S.minCap, 0)), rsMin = num(S.rsMin, 80), perThr = num(S.perThr, 15), fMin = num(S.fMin, 7);
+    var isDefault = minCap === 2 && rsMin === 80 && perThr === 15 && fMin === 7;
+    function inUni(x) { return (CAPS[x.t] || 0) >= minCap; }
+
+    // sizing
+    var capNum = parseFloat(S.cap), riskNum = parseFloat(S.risk);
+    var capOk = isFinite(capNum) && capNum > 0, riskOk = isFinite(riskNum) && riskNum >= 0.25 && riskNum <= 3, inputsOk = capOk && riskOk;
+    var riskAmt = inputsOk ? capNum * riskNum / 100 : 0;
+    var errs = [];
+    if (!capOk) errs.push('Enter a capital amount above $0.');
+    if (!riskOk) errs.push('Risk per trade must be between 0.25% and 3%.');
+    function size(x, entry, sl, basis) {
+      var o = { entry: money(entry), sl: money(sl), basis: basis, qty: '—', pos: '', over: false };
+      var per = entry - sl;
+      if (per <= 0) { o.pos = 'Entry at or below stop'; return o; }
+      if (!inputsOk) { o.pos = 'Check sizing inputs'; return o; }
+      var q = Math.floor(riskAmt / per);
+      o.qty = String(q); o.pos = whole(q * entry) + ' position'; o.over = q * entry > capNum;
+      return o;
+    }
+    function sizeCells(z) {
+      return '<span>' + z.entry + '</span><span class="col"><span>' + z.sl + '</span><span class="sub">' + z.basis + '</span></span>' +
+        '<span class="col"><strong>' + z.qty + '</strong><span class="sub">' + z.pos + '</span>' + when(z.over, '<span class="pill">exceeds capital</span>') + '</span>';
+    }
+    var momA = MOM_A.filter(function (x) { return inUni(x) && x.rs >= rsMin; });
+    var momB = MOM_B.filter(function (x) { return inUni(x) && x.rs >= rsMin; });
+    var cur = S.momTab === 'B' ? momB : momA;
+    function perFilter(rows) { return rows.filter(function (x) { return inUni(x) && Math.abs(x.chg) >= perThr; }); }
+    var perRows = perFilter(PER[S.perTab].rows);
+    var vltRows = VLT.filter(function (x) { return inUni(x) && x.f >= fMin; });
+    var universe = Math.round(550 * Math.exp(-minCap / 60));
+
+    var h = '';
+    // header
+    h += '<header style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px">' +
+      '<div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div class="row" style="gap:8px"><h1 style="margin:0;font-size:24px">Swing Trading Dashboard</h1>' + tag('Showing ' + S.release) +
+      '<span class="chip" style="background:#1F1F1F;color:#FFFFFF">SAMPLE DATA</span></div>' +
+      '<div class="meta">Last refresh Mon Oct 26, 2026 · 6:42 PM ET · opened from cache in 4 s · prices as of ' + asOf + '</div></div>' +
+      '<div class="row" style="gap:8px"><button class="btn btnp" type="button">Refresh stale modules</button><a class="btn" href="#archive" data-set="screen=archive">Archive</a>' +
+      when(v3, '<button class="btn" type="button">Export HTML / PDF</button>') + '</div></header>';
+    h += when(S.holiday, '<div class="warn">Market closed today (holiday). Every module uses the last completed session, Fri Oct 23, 2026. ' + tag('PLAT-FR-07') + '</div>');
+    h += when(S.flag, '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:#1F1F1F;color:#FFFFFF;border-radius:8px;padding:14px 18px">' +
+      '<span class="chip" style="background:#FFB547;color:#1F1F1F">NEXT 7 DAYS</span><strong style="font-size:16px">FOMC decision · Wed Oct 28 · in 2 days</strong>' +
+      '<span style="font-size:14px;color:#E5E5E2">Statement 2:00 PM ET · Press conference 2:30 PM ET</span>' + tag('ECON-FR-05', 'margin-left:auto;background:transparent;color:#E5E5E2;border-color:#6B6B66') + '</div>');
+    h += when(v3, '<div style="display:flex;flex-direction:column;gap:10px;background:#E7EEF9;border:1px solid #B9CBEB;border-radius:8px;padding:12px 16px;font-size:14px;color:#1D3F8A">' +
+      '<div class="row" style="gap:8px 16px"><strong>Since your last visit (Wed Oct 21)</strong>' + tag('DASH-FR-05 · v0.3', 'margin-left:auto') + '</div>' +
+      '<div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px 12px;align-items:start">' +
+      '<strong style="padding-top:3px">New</strong><span class="row"><span class="wn"><strong>DLTA</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>FXTR</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>GLFX</strong> · Momentum (RS + Cloud)</span><span class="wn"><strong>KILO</strong> · PE Re-rating (healthy)</span></span>' +
+      '<strong style="padding-top:3px">Dropped</strong><span class="row"><span class="wn"><strong>WHSK</strong> · Value Long Term</span><span class="wn"><strong>RMBL</strong> · Momentum (RS + RSI)</span></span>' +
+      '<strong style="padding-top:3px">Releases</strong><span class="row"><span class="wn"><strong>Jobless claims</strong> · Economic Data · Thu Oct 22</span></span></div></div>');
+
+    // economic data
+    var ECOLS = 'minmax(170px,1.7fr) 1fr 1fr 0.9fr 1fr 0.7fr 1.5fr 0.8fr';
+    h += '<section class="card" id="econ"><div class="sh"><h2 class="st">Economic Data</h2>' + econ.chip + '<span class="meta">As of Mon Oct 26 · 6:42 PM ET</span>' + tag('v0.1') + tag('ECON-FR-01 to 08') + tag('DASH-FR-07') + '</div>' +
+      '<p class="q">What macro data moved recently, and what is coming up?</p>' +
+      when(econ.partial, '<div class="warn"><strong>Partial:</strong> 9 of 11 indicators refreshed. Retail sales and light vehicle sales show the last good values from Oct 16.</div>') +
+      when(econ.unavailable, '<div class="unav"><strong>Economic Data is unavailable</strong><span>Reason: FRED API did not respond within 30 s.</span><span>Last good data: Fri Oct 23, 6:40 PM ET. Every other section loaded normally.</span></div>');
+    if (econ.table) {
+      h += '<div class="scroll"><div style="min-width:1080px"><div class="tr th" style="grid-template-columns:' + ECOLS + '"><span>Indicator</span><span>Latest</span><span>Prior</span><span>Change</span><span>Units · period</span><span>Released</span><span>Next release (ET)</span><span>Days left</span></div>' +
+        ECON.map(function (e) {
+          return '<div class="tr" style="grid-template-columns:' + ECOLS + ';background:' + (e[9] ? '#F1F5FD' : '#FFFFFF') + '">' +
+            '<span class="col" title="' + DEFS[e[0]] + '"><strong class="def">' + e[0] + '</strong><span class="sub">' + e[1] + '</span></span>' +
+            '<span class="row">' + e[2] + when(e[10], '<span class="tag" title="Entered manually">M</span>') + '</span><span>' + e[3] + '</span><span>' + e[4] + '</span><span class="sub">' + e[5] + '</span><span>' + e[6] + '</span><span>' + e[7] + '</span>' +
+            '<span>' + (e[9] ? '<span class="pill">' + e[8] + '</span>' : e[8]) + '</span></div>';
+        }).join('') + '</div></div>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' +
+        '<div class="tile" title="10-year Treasury yield minus 2-year yield. When it drops below 0 (inverted), a recession has often followed."><span class="tl def">Yield curve · 10Y minus 2Y</span><span class="tv">+0.52 pp</span><span class="sub">Normal (above 0)</span></div>' +
+        '<div class="tile"><span class="tl">1-month trend</span><span class="tv">+0.08 pp</span><span class="sub">Steepening</span></div>' +
+        '<div class="tile"><span class="tl">Spread, last 30 days</span><svg viewBox="0 0 240 48" width="100%" height="48" role="img" aria-label="Placeholder line chart of the 10Y minus 2Y spread over the last month"><polyline fill="none" stroke="#5E5E5A" stroke-width="2" points="0,38 24,36 48,37 72,33 96,34 120,30 144,28 168,29 192,24 216,22 240,18"/><line x1="0" y1="46" x2="240" y2="46" stroke="#C9C9C4" stroke-dasharray="4 3"/></svg></div></div>' +
+        '<div class="legend"><span><span class="pill">in N days</span> releases in the next 7 days</span><span><span class="tag">M</span> PMI entered manually (ECON-FR-08)</span><span>"Date not confirmed" when no official date (ECON-FR-07)</span><span>PMI: above 50 = expansion, below 50 = contraction</span><span><span class="def">Dotted underline</span>: hover for a plain definition</span></div>';
+    }
+    h += '</section>';
+    h += soonCard('COT report', 'COT-FR-01 · placeholder in v0.1', ' · crude oil, natural gas, gold, silver');
+
+    // regime + sectors
+    if (v2) {
+      var SC = '50px 70px minmax(180px,2fr) 60px 110px 110px 120px';
+      h += '<section class="card"><div class="sh"><h2 class="st">Market regime and sector rotation</h2><span class="meta">As of ' + asOf + '</span>' + tag('v0.2') + tag('REG-FR-01, SECT-FR-01, SECT-FR-02') + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;border-radius:8px;padding:14px 16px;background:' + reg.bg + ';color:' + reg.fg + '"><strong style="font-size:20px">' + S.regime + '</strong><span style="font-size:14px">' + reg.rule + '</span></div>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">' +
+        '<div class="tile" title="Index of 500 large US companies. The main benchmark for the US stock market."><span class="tl def">S&amp;P 500</span><span class="tv">6,812</span><span class="sub">' + reg.spx + ' this week</span></div>' +
+        '<div class="tile" title="The 100 largest non-financial companies listed on Nasdaq. Heavy in technology."><span class="tl def">Nasdaq 100</span><span class="tv">24,950</span><span class="sub">' + reg.ndx + ' this week</span></div>' +
+        '<div class="tile" title="Expected 30-day swings in the S&amp;P 500, priced from options. The stock market fear gauge: under 20 is calm, over 30 is stressed."><span class="tl def">VIX</span><span class="tv">' + reg.vix + '</span><span class="sub">' + reg.vixWk + ' this week</span></div>' +
+        '<div class="tile" title="Interest rate on 10-year US Treasury bonds. A benchmark for mortgage and company borrowing costs."><span class="tl def">US 10-year yield</span><span class="tv">4.12%</span><span class="sub">−0.05 pp this week</span></div>' +
+        '<div class="tile" title="US Dollar Index: the dollar\'s value against six major currencies (euro, yen, pound and others). A rising dollar can hurt US exporters\' earnings."><span class="tl def">US Dollar Index (DXY)</span><span class="tv">' + reg.dxy + '</span><span class="sub">' + reg.dxyWk + ' this week</span></div>' +
+        '<div class="tile" title="MOVE index: expected swings in US Treasury yields, priced from options. The bond market\'s VIX: above about 120 signals stress."><span class="tl def">MOVE index</span><span class="tv">' + reg.move + '</span><span class="sub">' + reg.moveWk + ' this week</span></div></div>' +
+        '<div class="legend"><span>DXY and MOVE are context only. The regime rule uses SPY and VIX (REG-FR-01).</span></div>' +
+        '<div class="row" style="gap:8px 10px;margin-top:6px"><h3 style="margin:0;font-size:15px">Sector rotation · relative strength vs momentum, 11 SPDR sector ETFs vs SPY</h3>' + tag('SECT-FR-02') + '</div>' +
+        '<div style="border:1px solid #E2E2DE;border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px">' + rotationChart() +
+        '<div class="legend"><span>Big dot = this week · tail = the last 5 weeks</span><span>Sectors usually rotate clockwise: Improving, Leading, Weakening, Lagging</span><span>Hover a sector for its ETF and values</span><span>RS-Ratio and RS-Momentum formulas: signal spec (Q12)</span></div></div>' +
+        '<h3 style="margin:6px 0 0;font-size:15px">Sector ranking by RS</h3>' +
+        '<div class="scroll"><div style="min-width:760px"><div class="tr th" style="grid-template-columns:' + SC + '"><span>Rank</span><span>ETF</span><span>Sector</span><span>RS</span><span>Prior rank</span><span>4-week change</span><span>Quadrant</span></div>' +
+        SECTORS.map(function (s) {
+          return '<div class="tr" style="grid-template-columns:' + SC + '"><strong>' + s[0] + '</strong><span>' + s[1] + '</span><span>' + s[2] + '</span><span>' + s[3] + '</span><span>' + s[4] + '</span><span>' + s[5] + '</span>' +
+            '<span class="row"><span style="width:10px;height:10px;border-radius:50%;flex:none;background:' + QCOL[s[6]] + '"></span>' + s[6] + '</span></div>';
+        }).join('') + '</div></div></section>';
+    } else {
+      h += soonCard('Market regime and sector rotation', 'v0.2');
+    }
+
+    // stock selection parameters
+    if (v2) {
+      h += '<section class="card" id="params"><div class="sh"><h2 class="st">Stock selection parameters</h2>' +
+        '<span class="chip" style="background:' + (isDefault ? '#E7EEF9' : '#FFE7C7') + ';color:' + (isDefault ? '#1D3F8A' : '#6B3A00') + '">' + (isDefault ? 'DEFAULT · RULE-SPEC v0.1' : 'CUSTOM · UNSAVED') + '</span>' + tag('v0.2') + tag('PARAM-FR-01 to 06') + '</div>' +
+        '<p class="q">Universe filters apply to Momentum, both Value modules and the confluence list. Each section also has its own parameters under its title.</p>' +
+        '<div class="row" style="align-items:flex-end;gap:10px 16px">' +
+        '<label class="fl">Parameter set<select class="inp" style="width:230px"><option>Default · rule-spec v0.1</option><option>Large caps only</option><option>Custom (unsaved)</option></select></label>' +
+        field('Market cap at least ($B)', 'minCap', 'type="number" inputmode="decimal" min="0" step="0.5"', 160) +
+        field('Price at least ($)', '10', 'type="number" min="0"', 150, true) +
+        field('Avg daily $ volume at least ($M)', '20', 'type="number" min="0"', 200, true) +
+        '<button class="btn" type="button">Save as preset</button><button class="btn" type="button" data-set="reset=params">Reset all to default</button></div>' +
+        '<div class="legend"><span>Universe after filters: <strong>' + universe + '</strong> of 550 tickers</span><span>Changes re-run screens on today\'s cached data; no new API calls</span><span>Snapshots record the parameter set used</span></div></section>';
+    }
+
+    // momentum
+    var MC = 'minmax(60px,0.7fr) minmax(130px,1.4fr) 50px 70px 96px 70px 100px 64px minmax(130px,1.2fr) 80px 100px 110px';
+    var BC = '70px minmax(140px,1.4fr) 50px 1fr 1fr 1fr 1.1fr minmax(120px,1.1fr) 80px 100px 110px';
+    var momAvail = !mom.unavailable;
+    var showFew = momAvail && (S.momTab === 'A' || v2) && (mom.few || (mom.table && cur.length < 3));
+    h += '<section class="card" id="mom"><div class="sh"><h2 class="st">Momentum</h2>' + mom.chip + '<span class="meta">As of ' + asOf + ' · S&amp;P 500 + Nasdaq 100 (about 550 tickers)</span>' + tag('v0.1') + tag('MOM-FR-01 to 07') + '</div>' +
+      '<p class="q">Which stocks are outperforming with healthy, confirmed trends?</p>' +
+      when(v2, details('mom', 'Momentum parameters · RS ' + rsMin + '+ · market cap $' + minCap + 'B+',
+        field('RS rating at least', 'rsMin', 'type="number" min="1" max="99" step="1"', 120) +
+        field('RSI strong band', '50–70', 'type="text"', 120, true) + field('RSI pullback band', '40–50', 'type="text"', 120, true) +
+        field('Screen B breakout window (days)', '5', 'type="number"', 120, true) + field('Show top', '10', 'type="number"', 100, true) +
+        '<button class="btn" type="button">Apply · re-run from cached prices</button>')) +
+      when(v2 && momAvail && S.regime === 'Risk-off', '<div class="warn"><strong>Risk-off market.</strong> Momentum setups fail more often when the market is weak. ' + tag('REG-FR-02') + '</div>') +
+      when(mom.partial, '<div class="warn"><strong>Partial:</strong> 512 of 550 tickers fetched (93%, below the 95% threshold). Lists may be missing stocks, and this module is left out of the confluence list.</div>') +
+      when(mom.unavailable, '<div class="unav"><strong>Momentum is unavailable</strong><span>Reason: yfinance returned no price data.</span><span>Last good run: Fri Oct 23 close. Every other section loaded normally.</span></div>');
+    if (momAvail) {
+      h += '<div class="row" role="group" aria-label="Momentum screen" style="gap:8px">' +
+        '<button class="tab" type="button" data-set="momTab=A"' + pressed(S.momTab === 'A') + '>Screen A · RS + RSI (' + momA.length + ')</button>' +
+        '<button class="tab" type="button" data-set="momTab=B"' + pressed(S.momTab === 'B') + '>Screen B · RS + Ichimoku ' + (v2 ? '(' + momB.length + ')' : '· v0.2') + '</button></div>' +
+        '<div class="row" style="align-items:flex-end;gap:10px 16px;border:1px solid #E2E2DE;border-radius:6px;padding:12px;font-size:13px;background:#F7F7F5">' +
+        '<strong style="align-self:center">Position sizing</strong>' +
+        field('Capital ($)', 'cap', 'type="number" inputmode="decimal" min="1" step="1000"', 160) +
+        field('Risk per trade (%)', 'risk', 'type="number" inputmode="decimal" min="0.25" max="3" step="0.25"', 120) +
+        '<span style="align-self:center;font-size:14px">= <strong>' + (inputsOk ? whole(riskAmt) : '—') + '</strong> at risk per trade</span>' +
+        '<button class="btn" type="button" data-set="reset=sizing">Reset to config default</button>' + tag('MOM-FR-06, MOM-FR-07', 'align-self:center;margin-left:auto') +
+        '<span class="sub" style="flex-basis:100%">Your last values are saved on this computer only and never committed to the repo. Default from config.yaml: $50,000 at 1%. Quantity = risk ÷ (entry − exit SL), rounded down. Changing a value recalculates instantly; no module re-runs.</span>' +
+        when(errs.length, '<div class="warn" style="flex-basis:100%">' + errs.join(' ') + ' Quantities are hidden until this is fixed.</div>') + '</div>';
+      if (showFew) {
+        h += '<div class="unav" style="background:#FAFAF8"><strong>' + (mom.few ? 'Only 2 stocks met this screen today' : 'Only ' + cur.length + ' stock' + (cur.length === 1 ? '' : 's') + ' met this screen with the current parameters') + '</strong>' +
+          '<span>' + (mom.few ? 'ALPH and BRVO.' : (cur.length ? cur.map(function (x) { return x.t; }).join(', ') + '.' : 'None.')) + ' A table needs at least 3, so none is shown. (MOM-FR-05)</span></div>';
+      } else if (mom.table && S.momTab === 'A') {
+        h += '<p class="q">RS ' + rsMin + ' or higher, and RSI(14) between 50 and 70 ("strong") or pulling back to 40–50 in an uptrend ("pullback"). Top 10 by RS.</p>' +
+          '<div class="scroll"><div style="min-width:1320px"><div class="tr th" style="grid-template-columns:' + MC + '"><span>Ticker</span><span>Sector</span><span>RS</span><span>RSI(14)</span><span>Setup</span><span>Week %</span><span>vs 50-day MA</span><span>ATR %</span><span>Earnings</span><span>Entry</span><span>Exit (SL)</span><span>Quantity</span></div>' +
+          momA.map(function (x) {
+            var e = ENTRY[x.t], z = size(x, e, Math.round(e * (1 - 2 * x.atr / 100) * 100) / 100, '2× ATR');
+            return '<div class="tr" style="grid-template-columns:' + MC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.rs + '</span><span>' + x.rsi + '</span><span>' + tag(x.tag) + '</span><span>' + x.wk + '</span><span>' + x.ma + '</span><span>' + x.atr.toFixed(1) + '%</span>' + earnCell(x, v2) + sizeCells(z) + '</div>';
+          }).join('') + '</div></div>';
+      } else if (mom.table && S.momTab === 'B' && v2) {
+        h += '<p class="q">RS ' + rsMin + ' or higher, close above the cloud, Tenkan above Kijun, and the cloud ahead is green. Breakout flag = closed above the cloud in the last 5 trading days.</p>' +
+          '<div class="scroll"><div style="min-width:1240px"><div class="tr th" style="grid-template-columns:' + BC + '"><span>Ticker</span><span>Sector</span><span>RS</span><span>Close vs cloud</span><span>Tenkan vs Kijun</span><span>Cloud ahead</span><span>Breakout</span><span>Earnings</span><span>Entry</span><span>Exit (SL)</span><span>Quantity</span></div>' +
+          momB.map(function (x) {
+            var z = size(x, ENTRY[x.t], KIJUN[x.t], 'Kijun line');
+            return '<div class="tr" style="grid-template-columns:' + BC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.rs + '</span><span>Above</span><span>Tenkan above</span><span>Green</span><span>' + x.brk + '</span>' + earnCell(x, v2) + sizeCells(z) + '</div>';
+          }).join('') + '</div></div>';
+      } else if (S.momTab === 'B' && !v2) {
+        h += '<div class="soon"><strong style="color:#1F1F1F">Screen B · RS + Ichimoku</strong><span>Coming soon</span>' + tag('MOM-FR-03 · v0.2', 'margin-left:auto') + '</div>';
+      }
+      h += when(v3 && mom.table, '<div style="border:1px dashed #A8A8A3;border-radius:6px;padding:12px 14px;font-size:13px;color:#4A4A46;background:#FAFAF8;display:flex;flex-direction:column;gap:4px">' +
+        '<strong style="color:#1F1F1F">Why flagged ' + tag('AI-FR-02 · v0.3') + '</strong><span>ALPH: RS 97 (80 or higher); RSI 64.2 (between 50 and 70).</span><span>CHRL: RS 91; RSI 46.3, pulling back to 40–50 while in an uptrend.</span></div>') +
+        '<div class="legend"><span>Ticker opens an external chart (DASH-FR-06, v0.2)</span>' + when(v2, '<span><span class="pill">within 10 days</span> earnings inside 10 trading days (EARN-FR-01)</span>') +
+        '<span>Entry = last close · Exit (SL) = entry minus 2× ATR (Screen A) or the Kijun line (Screen B) · rules: signal spec</span><span>Planning aid from your own rules, not advice</span></div>';
+    }
+    h += '</section>';
+
+    // PE re-rating, value long term, confluence
+    if (v2) {
+      var PC = '70px minmax(140px,1.4fr) 90px 110px 90px 110px minmax(120px,1.1fr)';
+      h += '<section class="card" id="per"><div class="sh"><h2 class="st">Value · PE Re-rating</h2>' + per.chip + '<span class="meta">As of ' + asOf + '</span>' + tag('v0.2') + tag('PER-FR-01 to 05') + '</div>' +
+        '<p class="q">Which stocks is the market paying a higher (or lower) multiple for, and is it backed by earnings?</p>' +
+        details('per', 'PE re-rating parameters · PE change ' + perThr + '%+ · market cap $' + minCap + 'B+',
+          field('Forward PE change at least (%)', 'perThr', 'type="number" min="1" max="100" step="1"', 140) +
+          '<label class="fl">Compared with <span class="nw">not wired in wireframe</span><select class="inp" style="width:180px"><option>52-week median PE</option><option>3-year median PE</option></select></label>' +
+          field('EPS trend window (days)', '90', 'type="number"', 120, true) + '<button class="btn" type="button">Apply · re-run from cached data</button>') +
+        when(per.partial, '<div class="warn"><strong>Partial:</strong> forward estimates fetched for 488 of 550 tickers (89%). Left out of the confluence list.</div>') +
+        when(per.unavailable, '<div class="unav"><strong>Value · PE Re-rating is unavailable</strong><span>Reason: FMP source disabled (free-tier daily limit reached).</span><span>Last good run: Fri Oct 23 close. Every other section loaded normally.</span></div>');
+      if (!per.unavailable) {
+        h += '<div class="row" role="group" aria-label="Re-rating list" style="gap:8px">' + ['healthy', 'stretched', 'derating'].map(function (k) {
+          return '<button class="tab" type="button" data-set="perTab=' + k + '"' + pressed(S.perTab === k) + '>' + PER[k].label + ' (' + perFilter(PER[k].rows).length + ')</button>';
+        }).join('') + '</div><p class="q">' + PER[S.perTab].rule(perThr) + '</p>';
+        if (per.few) h += '<div class="unav" style="background:#FAFAF8"><strong>Fewer than 3 stocks met this rule today</strong><span>No table shown.</span></div>';
+        else if (per.table && !perRows.length) h += '<div class="unav" style="background:#FAFAF8"><strong>No stocks match the current parameters</strong><span>Lower the PE change threshold or the market-cap filter. (PER-FR-05)</span></div>';
+        else if (per.table) {
+          h += '<div class="scroll"><div style="min-width:900px"><div class="tr th" style="grid-template-columns:' + PC + '"><span>Ticker</span><span>Sector</span><span>Fwd PE</span><span>52-wk median</span><span>Change</span><span>EPS estimates</span><span>Earnings</span></div>' +
+            perRows.map(function (x) {
+              return '<div class="tr" style="grid-template-columns:' + PC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.pe + '</span><span>' + x.med + '</span><span>' + (x.chg > 0 ? '+' : '−') + Math.abs(x.chg).toFixed(1) + '%</span><span>' + tag(x.eps) + '</span>' + earnCell(x, v2) + '</div>';
+            }).join('') + '</div></div>';
+        }
+      }
+      h += '</section>';
+
+      var VC = '70px minmax(130px,1.3fr) 120px 80px 70px 70px 70px 90px minmax(120px,1.1fr)';
+      h += '<section class="card" id="vlt"><div class="sh"><h2 class="st">Value · Long Term</h2>' + vlt.chip + '<span class="meta">As of ' + asOf + '</span>' + tag('v0.2') + tag('VLT-FR-01 to 05') + '</div>' +
+        '<p class="q">Which quality companies are trading cheap? PE below sector median, FCF yield 5%+, ROE 15%+, debt/equity under 1, F-score ' + fMin + '+. Top 10 by value score.</p>' +
+        details('vlt', 'Value parameters · F-score ' + fMin + '+ · market cap $' + minCap + 'B+',
+          field('Piotroski F-score at least', 'fMin', 'type="number" min="0" max="9" step="1"', 120) +
+          field('FCF yield at least (%)', '5', 'type="number"', 120, true) + field('ROE at least (%)', '15', 'type="number"', 120, true) +
+          field('Debt/equity below', '1', 'type="number" step="0.1"', 120, true) + '<button class="btn" type="button">Apply · re-run from cached data</button>') +
+        when(vlt.partial, '<div class="warn"><strong>Partial:</strong> fundamentals fetched for 501 of 550 tickers (91%). Left out of the confluence list.</div>') +
+        when(vlt.unavailable, '<div class="unav"><strong>Value · Long Term is unavailable</strong><span>Reason: FMP source disabled (free-tier daily limit reached).</span><span>Last good run: Fri Oct 23 close. Every other section loaded normally.</span></div>') +
+        when(vlt.few, '<div class="unav" style="background:#FAFAF8"><strong>Fewer than 3 stocks passed all five rules today</strong><span>No table shown.</span></div>');
+      if (vlt.table && !vltRows.length) h += '<div class="unav" style="background:#FAFAF8"><strong>No stocks match the current parameters</strong><span>Lower the F-score minimum or the market-cap filter. (VLT-FR-05)</span></div>';
+      else if (vlt.table) {
+        h += '<div class="scroll"><div style="min-width:1000px"><div class="tr th" style="grid-template-columns:' + VC + '"><span>Ticker</span><span>Sector</span><span>PE vs sector</span><span>FCF yield</span><span>ROE</span><span>D/E</span><span>F-score</span><span>Value score</span><span>Earnings</span></div>' +
+          vltRows.map(function (x) {
+            return '<div class="tr" style="grid-template-columns:' + VC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.pe + '</span><span>' + x.fcf + '</span><span>' + x.roe + '</span><span>' + x.de + '</span><span>' + x.f + '</span><strong>' + x.score + '</strong><span>' + x.earn + '</span></div>';
+          }).join('') + '</div></div><div class="legend"><span>Excluded today: 23 with negative earnings, 6 with missing fundamentals (VLT-FR-04)</span><span>Value score formula: signal spec (Q6)</span></div>';
+      }
+      h += '</section>';
+
+      var partialMods = [];
+      if (mom.partial) partialMods.push('Momentum');
+      if (per.partial) partialMods.push('PE Re-rating');
+      if (vlt.partial) partialMods.push('Value Long Term');
+      var CC = '70px minmax(140px,1.2fr) 70px minmax(260px,2.5fr)';
+      h += '<section class="card" id="conf"><div class="sh"><h2 class="st">Confluence list</h2><span class="meta">Stocks passing 2 or more module screens</span>' + tag('v0.2') + tag('CONF-FR-01') + '</div>' +
+        '<div class="scroll"><div style="min-width:640px"><div class="tr th" style="grid-template-columns:' + CC + '"><span>Ticker</span><span>Sector</span><span>Passes</span><span>Screens passed</span></div>' +
+        CONF.map(function (x) { return '<div class="tr" style="grid-template-columns:' + CC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><strong>' + x.n + '</strong><span class="row">' + x.mods.map(function (m) { return tag(m); }).join('') + '</span></div>'; }).join('') +
+        '</div></div><div class="legend"><span>Reads module outputs only. Modules with status "partial" are left out (Q10).</span>' + when(partialMods.length, '<span>Left out today: ' + partialMods.join(', ') + '</span>') + '</div></section>';
+    } else {
+      h += soonCard('Value · PE Re-rating', 'v0.2') + soonCard('Value · Long Term', 'v0.2') + soonCard('Confluence list', 'v0.2');
+    }
+
+    // tracker
+    if (v3) {
+      var TC = '110px 70px minmax(130px,1.3fr) 80px 80px 80px 110px';
+      h += '<section class="card" id="track"><div class="sh"><h2 class="st">Past-picks tracker</h2><span class="meta">Returns of flagged stocks vs SPY, built from the archive (since week 7)</span>' + tag('v0.3') + tag('TRACK-FR-01') + '</div>' +
+        '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">' +
+        [['Momentum A', '58%', '24'], ['Momentum B', '61%', '13'], ['PE Re-rating', '50%', '10'], ['Value Long Term', '55%', '11']].map(function (t) {
+          return '<div class="tile"><span class="tl">' + t[0] + ' · beat SPY at 4 weeks</span><span class="tv">' + t[1] + '</span><span class="sub">' + t[2] + ' picks · parameter set: Default</span></div>';
+        }).join('') + '</div>' +
+        '<div class="scroll"><div style="min-width:760px"><div class="tr th" style="grid-template-columns:' + TC + '"><span>Flagged</span><span>Ticker</span><span>Module</span><span>1 week</span><span>2 weeks</span><span>4 weeks</span><span>4 wk vs SPY</span></div>' +
+        PICKS.map(function (p) { return '<div class="tr" style="grid-template-columns:' + TC + '"><span>' + p[0] + '</span>' + tickerCell(p[1]) + '<span>' + p[2] + '</span><span>' + p[3] + '</span><span>' + p[4] + '</span><span>' + p[5] + '</span><strong>' + p[6] + '</strong></div>'; }).join('') +
+        '</div></div><div class="legend"><span>"—" = not enough time has passed yet</span></div></section>';
+    } else {
+      h += soonCard('Past-picks tracker', 'v0.3');
+    }
+
+    // AI summary
+    if (v3) {
+      h += '<section class="card" id="ai"><div class="sh"><h2 class="st">AI summary</h2><span class="meta">Generated 6:43 PM ET from module outputs only</span>' + tag('v0.3') + tag('AI-FR-01, AI-FR-03') + '</div>' +
+        '<div style="border:1px dashed #A8A8A3;border-radius:6px;padding:16px;font-size:14px;line-height:1.55;color:#4A4A46;background:#FAFAF8">[About 150 words on the macro picture and what each module shows today. Every number must appear in a module output. No buy or sell language. If generation fails, a plain fallback line shows here and the rest of the page still loads.]</div></section>';
+    } else {
+      h += soonCard('AI summary', 'v0.3');
+    }
+
+    h += '<footer style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #D4D4D0;padding-top:16px"><strong style="font-size:14px">Personal research project, not investment advice.</strong>' +
+      '<span class="meta">Snapshot saved Mon Oct 26, 2026 6:42 PM ET · contract v1 · rule-spec v0.1 · ECON 0.1.0 · MOM 0.1.0' + when(v2, ' · MOM-B 0.2.0 · PER 0.2.0 · VLT 0.2.0 · REG 0.2.0') + ' · parameter set: ' + (isDefault ? 'Default (rule-spec v0.1)' : 'Custom') + '</span>' +
+      '<span class="row">' + tag('ARCH-FR-01') + tag('ARCH-FR-04') + tag('NFR-14') + '</span></footer>';
+    return h;
+  }
+
+  function rotationChart() {
+    var pts = [
+      ['XLK', 'Technology', '104.2', '101.3', 'Leading', '760,230 790,195 815,165 830,148 842,135', 842, 135, 853, 131, 'start'],
+      ['XLI', 'Industrials', '102.0', '100.8', 'Leading', '560,240 600,215 635,200 655,190 673,183', 673, 183, 684, 179, 'start'],
+      ['XLC', 'Communication Svcs', '103.1', '99.4', 'Weakening', '800,190 790,230 775,265 765,295 758,318', 758, 318, 769, 330, 'start'],
+      ['XLF', 'Financials', '101.4', '99.2', 'Weakening', '690,230 670,270 650,300 637,320 627,337', 627, 337, 638, 352, 'start'],
+      ['XLY', 'Consumer Disc.', '99.4', '101.6', 'Improving', '440,330 445,270 455,200 465,145 474,106', 474, 106, 440, 96, 'start'],
+      ['XLE', 'Energy', '97.8', '100.9', 'Improving', '300,330 315,280 330,230 342,200 351,174', 351, 174, 362, 170, 'start'],
+      ['XLB', 'Materials', '99.6', '99.7', 'Lagging', '470,320 480,310 478,300 485,295 489,289', 489, 289, 476, 281, 'end'],
+      ['XLV', 'Health Care', '98.7', '98.9', 'Lagging', '560,300 520,320 480,340 450,355 420,366', 420, 366, 410, 386, 'end'],
+      ['XLU', 'Utilities', '97.2', '99.0', 'Lagging', '380,300 360,320 335,340 318,350 305,356', 305, 356, 294, 374, 'end'],
+      ['XLRE', 'Real Estate', '96.4', '98.4', 'Lagging', '300,370 280,390 265,400 252,410 244,414', 244, 414, 233, 432, 'end'],
+      ['XLP', 'Consumer Staples', '95.9', '99.6', 'Lagging', '180,380 185,350 193,325 200,310 206,298', 206, 298, 196, 290, 'end']
+    ];
+    var xt = '', v;
+    for (v = 94; v <= 106; v++) xt += '<text x="' + (60 + (v - 94) * 76.667).toFixed(1) + '" y="520">' + v + '</text>';
+    var s = '<svg viewBox="0 0 1000 560" width="100%" role="img" aria-label="Quadrant chart of the 11 sectors. Leading: Technology, Industrials. Weakening: Communication Services, Financials. Improving: Consumer Discretionary, Energy. Lagging: Materials, Health Care, Utilities, Real Estate, Consumer Staples." style="display:block;max-width:1000px;margin:0 auto;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif">' +
+      '<rect x="60" y="20" width="460" height="240" fill="#E6ECFA"/><rect x="520" y="20" width="460" height="240" fill="#E5F2E7"/><rect x="60" y="260" width="460" height="240" fill="#FBE6E4"/><rect x="520" y="260" width="460" height="240" fill="#FCF3DC"/>' +
+      '<g stroke="#FFFFFF" stroke-width="1"><line x1="60" y1="68" x2="980" y2="68"/><line x1="60" y1="164" x2="980" y2="164"/><line x1="60" y1="356" x2="980" y2="356"/><line x1="60" y1="452" x2="980" y2="452"/><line x1="213.3" y1="20" x2="213.3" y2="500"/><line x1="366.7" y1="20" x2="366.7" y2="500"/><line x1="673.3" y1="20" x2="673.3" y2="500"/><line x1="826.7" y1="20" x2="826.7" y2="500"/></g>' +
+      '<line x1="520" y1="20" x2="520" y2="500" stroke="#5E5E5A" stroke-width="1.5"/><line x1="60" y1="260" x2="980" y2="260" stroke="#5E5E5A" stroke-width="1.5"/>' +
+      '<g font-size="16" font-weight="700"><text x="74" y="46" fill="#23439E">Improving</text><text x="966" y="46" fill="#1F5E23" text-anchor="end">Leading</text><text x="74" y="486" fill="#9E2B20">Lagging</text><text x="966" y="486" fill="#7A5200" text-anchor="end">Weakening</text></g>' +
+      '<g font-size="12" fill="#5E5E5A" text-anchor="middle">' + xt + '</g>' +
+      '<g font-size="12" fill="#5E5E5A" text-anchor="end"><text x="52" y="72">102</text><text x="52" y="168">101</text><text x="52" y="264">100</text><text x="52" y="360">99</text><text x="52" y="456">98</text></g>' +
+      '<text x="520" y="550" font-size="13" font-weight="600" fill="#3D3D3A" text-anchor="middle">RS-Ratio: strength vs SPY (above 100 = outperforming)</text>' +
+      '<text x="16" y="260" font-size="13" font-weight="600" fill="#3D3D3A" text-anchor="middle" transform="rotate(-90 16 260)">RS-Momentum (above 100 = improving)</text>';
+    pts.forEach(function (p) {
+      var c = QCOL[p[4]];
+      s += '<g><title>' + p[0] + ' · ' + p[1] + ' · RS-Ratio ' + p[2] + ' · RS-Momentum ' + p[3] + ' · ' + p[4] + '</title>' +
+        '<polyline points="' + p[5] + '" fill="none" stroke="' + c + '" stroke-width="2.5" stroke-linejoin="round"/><circle cx="' + p[6] + '" cy="' + p[7] + '" r="7" fill="' + c + '"/>' +
+        '<text x="' + p[8] + '" y="' + p[9] + '" font-size="13" font-weight="700" fill="#1F1F1F" text-anchor="' + p[10] + '">' + p[1] + '</text></g>';
+    });
+    return s + '</svg>';
+  }
+
+  // ---------- archive ----------
+  function archive() {
+    var sel = SNAPS.filter(function (d) { return d.id === S.snap; })[0] || SNAPS[0];
+    var AC = 'minmax(160px,1.6fr) 1fr 1fr 70px';
+    return '<header style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">' +
+      '<div style="display:flex;flex-direction:column;gap:6px"><div class="row" style="gap:8px"><h1 style="margin:0;font-size:24px">Snapshot archive</h1>' + tag('ARCH-FR-01, ARCH-FR-02 · v0.1') + '</div>' +
+      '<span class="meta">Every refresh saves a dated HTML + JSON snapshot. Pick a date to open it.</span></div>' +
+      '<a class="btn" href="#dashboard" data-set="screen=dashboard">Back to today</a></header>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">' +
+      '<nav aria-label="Snapshots by date" class="card" style="flex:1 1 260px;padding:16px;gap:8px"><strong style="font-size:14px">October 2026</strong>' +
+      SNAPS.map(function (d) {
+        var on = d.id === sel.id;
+        return '<button class="tab" type="button" data-set="snap=' + d.id + '"' + pressed(on) + ' style="display:flex;justify-content:space-between;align-items:center;text-align:left"><span>' + d.label + '</span><span style="font-size:12px;font-weight:400">' + d.time + '</span></button>';
+      }).join('') + '</nav>' +
+      '<section class="card" style="flex:999 1 560px"><div class="sh"><h2 class="st">Snapshot · ' + sel.label + '</h2><span class="meta">Saved ' + sel.time + ' ET · contract v1 · rule-spec v0.1 · parameter set: Default</span></div>' +
+      '<div class="scroll"><div style="min-width:560px"><div class="tr th" style="grid-template-columns:' + AC + '"><span>Module</span><span>Version</span><span>Status</span><span>Rows</span></div>' +
+      sel.mods.map(function (m) { return '<div class="tr" style="grid-template-columns:' + AC + '"><strong>' + m[0] + '</strong><span>' + m[1] + '</span><span>' + m[2] + '</span><span>' + m[3] + '</span></div>'; }).join('') + '</div></div>' +
+      '<div class="row" style="gap:8px"><button class="btn btnp" type="button">Open snapshot (HTML)</button><button class="btn" type="button">Download JSON</button><button class="btn" type="button" style="border-style:dashed;color:#5E5E5A">Export PDF · v0.3</button></div>' +
+      '<span class="meta">The snapshot opens read-only, exactly as the dashboard looked that day, disclaimer included.</span></section></div>' +
+      '<footer style="border-top:1px solid #D4D4D0;padding-top:16px;font-size:14px;font-weight:600">Personal research project, not investment advice.</footer>';
+  }
+
+  // ---------- state sheet ----------
+  function states() {
+    function card(n, ref, body, style) {
+      return '<div class="card" style="padding:16px;gap:10px' + (style || '') + '"><div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#4A4A46;display:flex;justify-content:space-between;gap:8px"><span>' + n + '</span>' + tag(ref) + '</div>' + body + '</div>';
+    }
+    function head(title, c) { return '<div class="sh"><h2 class="st" style="font-size:16px">' + title + '</h2>' + (c ? status(c).chip : '') + '<span class="meta">As of Mon Oct 26 close</span></div>'; }
+    function mini(rows) {
+      return '<div class="scroll mini"><div class="tr th"><span>Ticker</span><span>Sector</span><span>RS</span><span>RSI</span></div>' +
+        rows.map(function (r) { return '<div class="tr"><strong>' + r[0] + '</strong><span>' + r[1] + '</span><span>' + r[2] + '</span><span>' + r[3] + '</span></div>'; }).join('') + '</div>';
+    }
+    var A = ['ALPH', 'Technology', '97', '64.2'], B = ['BRVO', 'Industrials', '94', '58.7'], C = ['CHRL', 'Health Care', '91', '46.3'];
+    return '<div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font-size:26px">One section, six states</h1>' +
+      '<p class="q" style="font-size:14px">Every module section must handle each of these. Shown with Momentum; the same rules apply to Economic Data and both Value modules.</p></div>' +
+      '<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">' +
+      card('1 · OK', 'PLAT-FR-01', head('Momentum', 'ok') + mini([A, B, C])) +
+      card('2 · Partial', 'PLAT-FR-06', head('Momentum', 'partial') + '<div class="warn"><strong>Partial:</strong> 512 of 550 tickers fetched (93%). Lists may be missing stocks. Left out of the confluence list.</div>' + mini([A, B])) +
+      card('3 · Unavailable', 'PLAT-FR-02', '<div class="sh"><h2 class="st" style="font-size:16px">Momentum</h2>' + status('unavailable').chip + '</div><div class="unav"><strong>Momentum is unavailable</strong><span>Reason: yfinance returned no price data.</span><span>Last good run: Fri Oct 23 close.</span><span>Every other section loaded normally.</span></div>') +
+      card('4 · Fewer than 3 results', 'MOM-FR-05', head('Momentum', 'fewer than 3') + '<div class="unav" style="background:#FAFAF8"><strong>Only 2 stocks met this screen today</strong><span>ALPH and BRVO. A table needs at least 3, so none is shown.</span></div>') +
+      card('5 · Not built yet', 'DASH-FR-02', '<div class="sh"><h2 class="st" style="font-size:16px">Value · Long Term</h2>' + tag('v0.2') + '</div><p class="q" style="font-size:13px;color:#4A4A46">Coming soon. The section keeps its place in the page order so the layout does not shift when it ships.</p>', ';background:#FAFAF8;border-style:dashed;border-color:#A8A8A3') +
+      card('6 · Risk-off warning', 'REG-FR-02', head('Momentum', 'ok') + '<div class="warn"><strong>Risk-off market.</strong> Momentum setups fail more often when the market is weak.</div>' + mini([A])) +
+      '</div><p class="q">Also handled on the dashboard: market holiday note (PLAT-FR-07) · earnings within 10 trading days (EARN-FR-01) · releases in the next 7 days (ECON-FR-04) · "Date not confirmed" (ECON-FR-07) · no stocks match the current parameters (PER-FR-05, VLT-FR-05)</p>';
+  }
+
+  // ---------- prototype controls (not part of the product) ----------
+  function controls() {
+    var nav = SCREENS.map(function (k) {
+      return '<button class="navb" type="button" data-set="screen=' + k + '"' + pressed(S.screen === k) + '>' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>';
+    }).join('');
+    var dash = S.screen !== 'dashboard' ? '' :
+      '<label>Release <select data-k="release">' + opts(['v0.1 MVP', 'v0.2', 'v0.3', 'v1.0'], S.release) + '</select></label>' +
+      '<label>Economic Data <select data-k="econ">' + opts(['ok', 'partial', 'unavailable'], S.econ) + '</select></label>' +
+      '<label>Momentum <select data-k="mom">' + opts(['ok', 'partial', 'unavailable', 'fewer than 3'], S.mom) + '</select></label>' +
+      '<label>PE Re-rating <select data-k="per">' + opts(['ok', 'partial', 'unavailable', 'fewer than 3'], S.per) + '</select></label>' +
+      '<label>Value LT <select data-k="vlt">' + opts(['ok', 'partial', 'unavailable', 'fewer than 3'], S.vlt) + '</select></label>' +
+      '<label>Regime <select data-k="regime">' + opts(['Risk-on', 'Caution', 'Risk-off'], S.regime) + '</select></label>' +
+      '<label><input type="checkbox" data-k="flag"' + (S.flag ? ' checked' : '') + '> FOMC flag</label>' +
+      '<label><input type="checkbox" data-k="holiday"' + (S.holiday ? ' checked' : '') + '> Market holiday</label>';
+    return '<div class="proto" role="region" aria-label="Prototype controls"><div class="in"><strong>Wireframe</strong>' + nav +
+      '<span style="color:#BDBDB8">Prototype controls, not part of the product:</span>' + dash + '</div></div>';
+  }
+
+  // ---------- render + events ----------
+  var app = document.getElementById('app');
+  function render(focusKey) {
+    var body = S.screen === 'archive' ? archive() : S.screen === 'states' ? states() : dashboard();
+    app.innerHTML = controls() + '<div class="wrap">' + body + '</div>';
+    if (focusKey) {
+      var el = app.querySelector('[data-k="' + focusKey + '"]');
+      if (el) { el.focus(); try { var n = el.value.length; el.setSelectionRange(n, n); } catch (e) { /* number inputs */ } }
+    }
+  }
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-set]');
+    if (!b) return;
+    e.preventDefault();
+    var kv = b.getAttribute('data-set').split('='), k = kv[0], v = kv[1];
+    if (k === 'reset' && v === 'params') { S.minCap = '2'; S.rsMin = '80'; S.perThr = '15'; S.fMin = '7'; }
+    else if (k === 'reset' && v === 'sizing') { S.cap = '50000'; S.risk = '1'; }
+    else { S[k] = v; }
+    if (k === 'screen') { history.replaceState(null, '', '#' + v); window.scrollTo(0, 0); }
+    render();
+  });
+  function onField(e) {
+    var el = e.target, k = el.getAttribute('data-k');
+    if (!k) return;
+    S[k] = el.type === 'checkbox' ? el.checked : el.value;
+    render(el.tagName === 'INPUT' && el.type !== 'checkbox' ? k : null);
+  }
+  app.addEventListener('input', onField);
+  app.addEventListener('change', function (e) { if (e.target.tagName === 'SELECT' || e.target.type === 'checkbox') onField(e); });
+  app.addEventListener('toggle', function (e) {
+    var key = e.target.getAttribute && e.target.getAttribute('data-open');
+    if (key) S.open[key] = e.target.open;
+  }, true);
+  window.addEventListener('hashchange', function () {
+    var h = location.hash.slice(1);
+    if (SCREENS.indexOf(h) >= 0 && h !== S.screen) { S.screen = h; render(); }
+  });
+  render();
+})();
+</script>
+</body>
+</html>
