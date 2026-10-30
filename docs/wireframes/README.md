@@ -6,6 +6,7 @@ A low-fidelity, clickable wireframe of the dashboard. It goes with [PRD v1.2](..
 | --- | --- |
 | [prototype.html](prototype.html) | Clickable prototype in a single self-contained file. It needs no network or build step: download it and open it in any browser. |
 | [dashboard.png](dashboard.png) | Main page at release v1.0, default parameters, all modules OK |
+| [momentum-screen-a.png](momentum-screen-a.png) | Momentum Screen A (RS + RSI, daily): RS rating 80+ with RSI strong or pullback, top 10 by RS, entry at the last close and exit at entry minus 2× ATR. Rules still per PRD v1.2; Spec 3 is not written yet |
 | [momentum-screen-b.png](momentum-screen-b.png) | Momentum Screen B (RS + Ichimoku, weekly): New and Pending signals grouped by sector, with entry at the signal candle high and exit at its low ([Spec 4](../04-signal-spec/04-rs-ichimoku.md)) |
 | [value-long-term.png](value-long-term.png) | Value – Long Term: options, interest coverage, 10-year growth, PEG and Debt/EBITDA rules, largest market cap first ([Spec 1](../04-signal-spec/01-value-long-term.md)) |
 | [archive.png](archive.png) | Snapshot archive: open a past refresh by date |
