@@ -7,6 +7,7 @@ A low-fidelity, clickable wireframe of the dashboard. It goes with [PRD v1.2](..
 | [prototype.html](prototype.html) | Clickable prototype in a single self-contained file. It needs no network or build step: download it and open it in any browser. |
 | [dashboard.png](dashboard.png) | Main page at release v1.0, default parameters, all modules OK |
 | [momentum-screen-b.png](momentum-screen-b.png) | Momentum Screen B (RS + Ichimoku, weekly): New and Pending signals grouped by sector, with entry at the signal candle high and exit at its low ([Spec 4](../04-signal-spec/04-rs-ichimoku.md)) |
+| [value-long-term.png](value-long-term.png) | Value – Long Term: options, interest coverage, 10-year growth, PEG and Debt/EBITDA rules, largest market cap first ([Spec 1](../04-signal-spec/01-value-long-term.md)) |
 | [archive.png](archive.png) | Snapshot archive: open a past refresh by date |
 | [states.png](states.png) | One section in six states (ok, partial, unavailable, fewer than 3, coming soon, risk-off) |
 
@@ -24,7 +25,7 @@ The dark bar at the top holds the **prototype controls**. They aren't part of th
 These parts of the page itself respond to clicks and typing:
 
 - Momentum Screen A / B tabs and the PE Re-rating list tabs
-- **Stock selection parameters**: market cap at least ($B), plus Screen A's RS minimum, PE change % and F-score minimum in each section's parameter panel. Screen B responds to the market-cap filter only; its RS length field is shown but not wired. Tables, tab counts and empty states update as you type.
+- **Stock selection parameters**: market cap at least ($B), plus Screen A's RS minimum, PE change % and Value – Long Term's PEG limit in each section's parameter panel. Screen B responds to the market-cap filter only; its RS length field is shown but not wired. Tables, tab counts and empty states update as you type.
 - **Position sizing**: Capital ($) and Risk per trade (%). Entry, Exit (SL) and Quantity recalculate, and positions larger than capital are flagged.
 - Hovering an underlined indicator or market tile shows a plain-language definition.
 - The Archive link and snapshot list

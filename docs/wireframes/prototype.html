@@ -70,7 +70,7 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     screen: SCREENS.indexOf(location.hash.slice(1)) >= 0 ? location.hash.slice(1) : 'dashboard',
     release: 'v1.0', econ: 'ok', mom: 'ok', per: 'ok', vlt: 'ok', regime: 'Risk-on', flag: true, holiday: false,
     momTab: 'A', perTab: 'healthy', cap: '50000', risk: '1',
-    minCap: '2', rsMin: '80', perThr: '15', fMin: '7', snap: '26', open: {}
+    minCap: '2', rsMin: '80', perThr: '15', pegMax: '1', snap: '26', open: {}
   };
 
   // ---------- sample data (fictional tickers) ----------
@@ -151,11 +151,12 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
       { t: 'PAPA', sector: 'Consumer Staples', pe: '17.0', med: '20.3', chg: -16.3, eps: 'Flat', earn: 'Tue Dec 1', soon: false } ] }
   };
   var VLT = [
-    { t: 'QBEC', sector: 'Energy', pe: '9.8 vs 12.4', fcf: '8.1%', roe: '21%', de: '0.42', f: 8, score: '86', earn: 'Tue Nov 3' },
-    { t: 'SIER', sector: 'Materials', pe: '11.6 vs 15.2', fcf: '6.9%', roe: '18%', de: '0.55', f: 7, score: '79', earn: 'Thu Nov 12' },
-    { t: 'TANG', sector: 'Health Care', pe: '14.1 vs 19.8', fcf: '6.2%', roe: '24%', de: '0.31', f: 8, score: '77', earn: 'Wed Nov 18' },
-    { t: 'UNIF', sector: 'Industrials', pe: '15.3 vs 19.0', fcf: '5.8%', roe: '17%', de: '0.68', f: 7, score: '71', earn: 'Tue Dec 8' },
-    { t: 'VIKN', sector: 'Consumer Staples', pe: '16.9 vs 20.3', fcf: '5.4%', roe: '16%', de: '0.87', f: 7, score: '66', earn: 'Thu Jan 7' }
+    // Spec 1: all rows pass options, interest coverage > 5, 10-yr revenue and net income CAGR > 10%, PEG < 1, Debt/EBITDA <= 3
+    { t: 'QBEC', name: 'Quebec Energy', ic: '9.6×', rev: 11.2, eps: 22.5, fcf: 19.4, ni: 20.1, peg: 0.46, ocf: 2.05, nip: 1.52, d2p: 1.9, cfo: 1.35, earn: 'Tue Nov 3' },
+    { t: 'SIER', name: 'Sierra Materials', ic: 'No debt', rev: 13.5, eps: 21.2, fcf: 16.7, ni: 19.8, peg: 0.68, ocf: 0.62, nip: 0.48, d2p: 0.0, cfo: 1.29, earn: 'Thu Nov 12' },
+    { t: 'TANG', name: 'Tangent Health', ic: '14.2×', rev: 12.4, eps: 18.9, fcf: 15.1, ni: 16.8, peg: 0.82, ocf: 2.41, nip: 1.86, d2p: 1.3, cfo: 1.30, earn: 'Wed Nov 18' },
+    { t: 'UNIF', name: 'Uniform Industrial', ic: '7.8×', rev: 10.8, eps: 17.6, fcf: 12.0, ni: 14.9, peg: 0.91, ocf: 0.98, nip: 0.71, d2p: 2.6, cfo: 1.38, earn: 'Tue Dec 8' },
+    { t: 'VIKN', name: 'Viking Foods', ic: '6.1×', rev: 10.3, eps: 14.8, fcf: 9.2, ni: 12.6, peg: 0.97, ocf: 0.29, nip: 0.24, d2p: 2.9, cfo: 1.21, earn: 'Thu Jan 7' }
   ];
   var CONF = [
     { t: 'ALPH', sector: 'Technology', n: '3', mods: ['Momentum A', 'Momentum B', 'PE re-rating · healthy'] },
@@ -220,8 +221,8 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     var reg = REGIMES[S.regime];
 
     // parameters
-    var minCap = Math.max(0, num(S.minCap, 0)), rsMin = num(S.rsMin, 80), perThr = num(S.perThr, 15), fMin = num(S.fMin, 7);
-    var isDefault = minCap === 2 && rsMin === 80 && perThr === 15 && fMin === 7;
+    var minCap = Math.max(0, num(S.minCap, 0)), rsMin = num(S.rsMin, 80), perThr = num(S.perThr, 15), pegMax = num(S.pegMax, 1);
+    var isDefault = minCap === 2 && rsMin === 80 && perThr === 15 && pegMax === 1;
     function inUni(x) { return (CAPS[x.t] || 0) >= minCap; }
 
     // sizing
@@ -249,7 +250,8 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     var cur = S.momTab === 'B' ? momB : momA;
     function perFilter(rows) { return rows.filter(function (x) { return inUni(x) && Math.abs(x.chg) >= perThr; }); }
     var perRows = perFilter(PER[S.perTab].rows);
-    var vltRows = VLT.filter(function (x) { return inUni(x) && x.f >= fMin; });
+    var vltRows = VLT.filter(function (x) { return inUni(x) && x.peg < pegMax; })
+      .sort(function (a, b) { return (CAPS[b.t] || 0) - (CAPS[a.t] || 0); });
     var universe = Math.round(550 * Math.exp(-minCap / 60));
 
     var h = '';
@@ -425,22 +427,27 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
       }
       h += '</section>';
 
-      var VC = '70px minmax(130px,1.3fr) 120px 80px 70px 70px 70px 90px minmax(120px,1.1fr)';
+      var VC = '70px minmax(120px,1fr) 64px 84px 76px 64px 64px 80px 50px 84px 80px 70px 70px 100px';
+      function pct(v) { return v.toFixed(1) + '%'; }
       h += '<section class="card" id="vlt"><div class="sh"><h2 class="st">Value · Long Term</h2>' + vlt.chip + '<span class="meta">As of ' + asOf + '</span>' + tag('v0.2') + tag('VLT-FR-01 to 05') + '</div>' +
-        '<p class="q">Which quality companies are trading cheap? PE below sector median, FCF yield 5%+, ROE 15%+, debt/equity under 1, F-score ' + fMin + '+. Top 10 by value score.</p>' +
-        details('vlt', 'Value parameters · F-score ' + fMin + '+ · market cap $' + minCap + 'B+',
-          field('Piotroski F-score at least', 'fMin', 'type="number" min="0" max="9" step="1"', 120) +
-          field('FCF yield at least (%)', '5', 'type="number"', 120, true) + field('ROE at least (%)', '15', 'type="number"', 120, true) +
-          field('Debt/equity below', '1', 'type="number" step="0.1"', 120, true) + '<button class="btn" type="button">Apply · re-run from cached data</button>') +
+        '<p class="q">Which consistently growing, low-debt companies are priced attractively relative to their growth? Listed US options, interest coverage above 5, 10-year revenue and net income growth above 10% a year, ' +
+        '<span class="def" title="PEG = PE ÷ EPS growth rate (%). Below 1 means the price is low relative to earnings growth.">PEG</span> below ' + pegMax + ', and ' +
+        '<span class="def" title="Total debt ÷ EBITDA: about how many years of earnings it would take to repay the debt.">Debt/EBITDA</span> of 3 or less. All passing stocks, largest market cap first.</p>' +
+        details('vlt', 'Value parameters · PEG below ' + pegMax + ' · market cap $' + minCap + 'B+',
+          field('PEG below', 'pegMax', 'type="number" inputmode="decimal" min="0" step="0.1"', 110) +
+          field('US options required', 'Yes', 'type="text"', 110, true) + field('Interest coverage above', '5', 'type="number"', 110, true) +
+          field('Revenue growth 10 yrs above (%)', '10', 'type="number"', 110, true) + field('Net income growth 10 yrs above (%)', '10', 'type="number"', 110, true) +
+          field('Debt/EBITDA at most', '3', 'type="number" step="0.5"', 110, true) + '<button class="btn" type="button">Apply · re-run from cached data</button>') +
         when(vlt.partial, '<div class="warn"><strong>Partial:</strong> fundamentals fetched for 501 of 550 tickers (91%). Left out of the confluence list.</div>') +
-        when(vlt.unavailable, '<div class="unav"><strong>Value · Long Term is unavailable</strong><span>Reason: FMP source disabled (free-tier daily limit reached).</span><span>Last good run: Fri Oct 23 close. Every other section loaded normally.</span></div>') +
-        when(vlt.few, '<div class="unav" style="background:#FAFAF8"><strong>Fewer than 3 stocks passed all five rules today</strong><span>No table shown.</span></div>');
-      if (vlt.table && !vltRows.length) h += '<div class="unav" style="background:#FAFAF8"><strong>No stocks match the current parameters</strong><span>Lower the F-score minimum or the market-cap filter. (VLT-FR-05)</span></div>';
+        when(vlt.unavailable, '<div class="unav"><strong>Value · Long Term is unavailable</strong><span>Reason: SEC EDGAR source did not respond (10 years of annual statements).</span><span>Last good run: Fri Oct 23 close. Every other section loaded normally.</span></div>') +
+        when(vlt.few, '<div class="unav" style="background:#FAFAF8"><strong>Fewer than 3 stocks passed all six rules today</strong><span>No table shown.</span></div>');
+      if (vlt.table && !vltRows.length) h += '<div class="unav" style="background:#FAFAF8"><strong>No stocks match the current parameters</strong><span>Raise the PEG limit or lower the market-cap filter. (VLT-FR-05)</span></div>';
       else if (vlt.table) {
-        h += '<div class="scroll"><div style="min-width:1000px"><div class="tr th" style="grid-template-columns:' + VC + '"><span>Ticker</span><span>Sector</span><span>PE vs sector</span><span>FCF yield</span><span>ROE</span><span>D/E</span><span>F-score</span><span>Value score</span><span>Earnings</span></div>' +
+        h += '<div class="scroll"><div style="min-width:1240px"><div class="tr th" style="grid-template-columns:' + VC + '"><span>Ticker</span><span>Name</span><span>Options</span><span title="EBIT ÷ interest expense" class="def">Int. coverage</span><span>Revenue 10y</span><span>EPS 10y</span><span>FCF 10y</span><span>Net income 10y</span><span>PEG</span><span>Op. cash flow</span><span>Net income</span><span title="Total debt ÷ net income" class="def">Debt to profit</span><span title="Operating cash flow ÷ net income. Above 1 = earnings backed by cash" class="def">CFO to profit</span><span>Earnings</span></div>' +
           vltRows.map(function (x) {
-            return '<div class="tr" style="grid-template-columns:' + VC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.pe + '</span><span>' + x.fcf + '</span><span>' + x.roe + '</span><span>' + x.de + '</span><span>' + x.f + '</span><strong>' + x.score + '</strong><span>' + x.earn + '</span></div>';
-          }).join('') + '</div></div><div class="legend"><span>Excluded today: 23 with negative earnings, 6 with missing fundamentals (VLT-FR-04)</span><span>Value score formula: signal spec (Q6)</span></div>';
+            return '<div class="tr" style="grid-template-columns:' + VC + '">' + tickerCell(x.t) + '<span>' + x.name + '</span><span>Yes</span><span>' + x.ic + '</span><span>' + pct(x.rev) + '</span><span>' + pct(x.eps) + '</span><span>' + pct(x.fcf) + '</span><span>' + pct(x.ni) + '</span><strong>' + x.peg.toFixed(2) + '</strong>' +
+              '<span>$' + x.ocf.toFixed(2) + 'B</span><span>$' + x.nip.toFixed(2) + 'B</span><span>' + x.d2p.toFixed(1) + '</span><span>' + x.cfo.toFixed(2) + '</span><span>' + x.earn + '</span></div>';
+          }).join('') + '</div></div><div class="legend"><span>Growth = compound annual growth rate (CAGR) over 10 years; cash flow and net income are trailing 12 months</span><span>Excluded today: 41 with under 10 years of history, 18 with negative net income at the start or end, 6 with missing fields (VLT-FR-04)</span><span>Rules: Spec 1 · Value – Long Term</span></div>';
       }
       h += '</section>';
 
@@ -598,7 +605,7 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     if (!b) return;
     e.preventDefault();
     var kv = b.getAttribute('data-set').split('='), k = kv[0], v = kv[1];
-    if (k === 'reset' && v === 'params') { S.minCap = '2'; S.rsMin = '80'; S.perThr = '15'; S.fMin = '7'; }
+    if (k === 'reset' && v === 'params') { S.minCap = '2'; S.rsMin = '80'; S.perThr = '15'; S.pegMax = '1'; }
     else if (k === 'reset' && v === 'sizing') { S.cap = '50000'; S.risk = '1'; }
     else { S[k] = v; }
     if (k === 'screen') { history.replaceState(null, '', '#' + v); window.scrollTo(0, 0); }
