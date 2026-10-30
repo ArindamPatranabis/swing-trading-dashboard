@@ -1,6 +1,6 @@
 # 03 · PRD — Swing Trading Dashboard
 
-Oct 28, 2026 · @Arindam Patranabis
+Oct 29, 2026 · @Arindam Patranabis
 
 ## 1. Overview
 
@@ -10,10 +10,10 @@ The Swing Trading Dashboard is a research dashboard you open with one click. It 
 | --- | --- |
 | Product | Swing Trading Dashboard |
 | Owner | Arindam Patranabis |
-| Version | 1.1 |
-| Status | Draft for review (Phase 0), updated after the wireframe review |
+| Version | 1.2 |
+| Status | Draft for review (Phase 0), updated after the wireframe review and signal specs 1 and 4 |
 | Repo location | docs/03-prd.md |
-| Related docs | docs/01-vision.md v1.1 · docs/02-persona.md · Product Roadmap v1.1 · Wireframe (Figma redraw to docs/wireframes/) · docs/04-signal-spec.md (to write) · Data dictionary (to write) · docs/07-architecture.md (to write) |
+| Related docs | docs/01-vision.md v1.1 · docs/02-persona.md · Product Roadmap v1.1 · Wireframe (Figma redraw to docs/wireframes/) · docs/04-signal-spec/ (one spec per module; Spec 1 Value – Long Term and Spec 4 RS + Ichimoku drafted) · Data dictionary (to write) · docs/07-architecture.md (to write) |
 
 **How to read this PRD.** It says what the product must do. It also says how we measure success. Exact formulas and thresholds are in the signal spec. Data fields are in the data dictionary. Design choices are in the architecture doc and ADRs. Every requirement has an ID, for example MOM-FR-03. User stories, tests and commits use these IDs.
 
@@ -114,7 +114,7 @@ The MVP is v0.1, due at the end of week 6. It is a dashboard you open from a des
 | Release | Target | Scope | Gate to pass |
 | --- | --- | --- | --- |
 | v0.1 MVP | End of week 6 | Module platform (contract, template, cache, validation); Economic Data; Momentum screen A (RS + RSI); dashboard shell; desktop launcher; failure isolation; archive; disclaimer; COT placeholder | Opens correctly from the desktop icon on 3+ days across 2 weeks, incl. one cached reopen under 60 s and one run with a module's source disabled where the rest still loads |
-| v0.2 | End of week 9 | Momentum screen B (RS + Ichimoku); Value – PE Re-rating; Value – Long Term; confluence list; regime banner with DXY and MOVE; sector rotation table and quadrant chart; earnings flags; stock selection parameters; entry, exit (SL) and quantity with runtime sizing inputs | All four core modules pass their contract tests, a full refresh finishes under 5 min, and a parameter change re-runs from cache with no new API calls |
+| v0.2 | End of week 9 | Momentum screen B (RS + Ichimoku, weekly); Value – PE Re-rating; Value – Long Term; confluence list; regime banner with DXY and MOVE; sector rotation table and quadrant chart; earnings flags; stock selection parameters; entry, exit (SL) and quantity with runtime sizing inputs | All four core modules pass their contract tests, a full refresh finishes under 5 min, and a parameter change re-runs from cache with no new API calls |
 | v0.3 | End of week 11 | AI summary and "why flagged" notes; past-picks tracker; snapshot export (HTML/PDF); "what's new since last visit"; saved parameter presets | Grounding check passes on 5 consecutive AI runs; tracker fills from the archive |
 | v1.0 | End of week 12 | Backtest sanity checks; config file; optional hosted link; 80%+ coverage; README, demo GIF, case study | All Musts and Shoulds green in CI; UAT checklist passed; repo public |
 
@@ -128,13 +128,13 @@ Every module follows the same platform rules. This lets the dashboard show any m
 
 | ID | Requirement | Priority | Release |
 | --- | --- | --- | --- |
-| PLAT-FR-01 | Every module returns results in one versioned output contract (JSON schema) containing at least: module name, module version, rule-spec version, parameter set used, as-of timestamp, status (ok / partial / unavailable), data source list, result rows, and warnings. Every stock row carries market cap; Momentum rows also carry entry, stop and stop basis. Modules never receive the owner's capital or risk inputs. | Must | v0.1 |
+| PLAT-FR-01 | Every module returns results in one versioned output contract (JSON schema) containing at least: module name, module version, rule-spec version, parameter set used, as-of timestamp, status (ok / partial / unavailable), data source list, result rows, and warnings. Every stock row carries market cap; Momentum rows also carry entry, stop and stop basis, and Screen B rows carry signal status. Modules never receive the owner's capital or risk inputs. | Must | v0.1 |
 | PLAT-FR-02 | If a module or its data source fails or exceeds its timeout, the dashboard shows "unavailable" with the reason and last good as-of time for that section only, and loads every other section. | Must | v0.1 |
 | PLAT-FR-03 | Each module lives in its own folder with its own data/cache, tests and version, and imports no code from any other module (the shared contract package is the only exception). | Must | v0.1 |
 | PLAT-FR-04 | Results are cached per trading day; a repeat click on the same day reuses the cache unless the user requests a refresh. | Must | v0.1 |
 | PLAT-FR-05 | A refresh re-runs only stale modules, runs modules in parallel, and respects a minimum refresh interval per module to stay within free API limits. | Must | v0.1 |
 | PLAT-FR-06 | Each module validates its input data before running rules (schema, ranges, coverage). If fewer than 95% of the universe is fetched, the module status is "partial" and the dashboard says so. | Must | v0.1 |
-| PLAT-FR-07 | Prices are split- and dividend-adjusted. On a market holiday, modules use the last completed trading session and show its date with a note. | Must | v0.1 |
+| PLAT-FR-07 | Prices are split-adjusted but not dividend-adjusted, so entry and stop levels match the broker's chart, unless a module's signal spec says otherwise. On a market holiday, modules use the last completed trading session and show its date with a note. | Must | v0.1 |
 | PLAT-FR-08 | Every module run logs its runtime, rows returned, API calls and cost. | Should | v0.2 |
 
 **Launcher and dashboard (DASH)**
@@ -145,7 +145,7 @@ Every module follows the same platform rules. This lets the dashboard show any m
 | DASH-FR-02 | Sections appear top to bottom: FOMC / jobs-report flag (when due), "what's new" strip, Economic Data, COT (placeholder), regime banner and sector rotation, stock selection parameters, Momentum, Value – PE Re-rating, Value – Long Term, confluence list, past-picks tracker, AI summary, disclaimer. Sections not yet built show "Coming soon". | Must | v0.1 |
 | DASH-FR-03 | Each section shows its as-of time and status. A visible "Refresh" control re-runs stale modules on demand. | Must | v0.1 |
 | DASH-FR-04 | The dashboard contains no screening logic; it only calls modules and renders contract outputs. Two calculations are allowed because they decide nothing about which stocks qualify: position sizing from contract values (MOM-FR-07), and hiding returned rows that fall outside the universe filters (PARAM-FR-01). | Must | v0.1 |
-| DASH-FR-05 | Changes since the previous visit are shown in a strip under the top flag: new and dropped tickers, each labelled with its source (Momentum RS + RSI or RS + Cloud, PE Re-rating with its list, Value – Long Term), and new releases labelled Economic Data. | Could | v0.3 |
+| DASH-FR-05 | Changes since the previous visit are shown in a strip under the top flag: new and dropped tickers, each labelled with its source (Momentum RS + RSI or RS + Ichimoku, PE Re-rating with its list, Value – Long Term), and new releases labelled Economic Data. For Screen B the strip shows signal events instead: New, Triggered and Cancelled (MOM-FR-03). | Could | v0.3 |
 | DASH-FR-06 | Every stock in a module table links to an external chart page. | Should | v0.2 |
 | DASH-FR-07 | Every Economic Data indicator, the yield curve and every market tile (S&P 500, Nasdaq 100, VIX, 10Y, DXY, MOVE) shows a one-line plain-language definition on hover, and on tap of an info icon on a phone. | Should | v0.1 |
 
@@ -165,7 +165,7 @@ Screens use written rules, but the values are editable on the dashboard. Default
 | ID | Requirement | Priority | Release |
 | --- | --- | --- | --- |
 | PARAM-FR-01 | A shared "Stock selection parameters" panel holds universe filters that apply to Momentum, both Value modules and the confluence list: market cap at least $X B (default $2B), price at least $X, and average daily dollar volume at least $X M. It shows how many universe tickers remain after the filters. | Should | v0.2 |
-| PARAM-FR-02 | Each stock module has its own parameter panel under its title. Momentum: RS minimum, RSI strong and pullback bands, Screen B breakout window, top N. PE Re-rating: forward PE change %, comparison base, EPS trend window. Value – Long Term: F-score, FCF yield, ROE and debt/equity thresholds. | Should | v0.2 |
+| PARAM-FR-02 | Each stock module has its own parameter panel under its title. Momentum Screen A: RS minimum, RSI strong and pullback bands, top N. Momentum Screen B: RS length in weeks only; its other values are fixed in the config file. PE Re-rating: forward PE change %, comparison base, EPS trend window. Value – Long Term: options required, interest coverage, 10-year revenue and net income growth, PEG and Debt/EBITDA thresholds. | Should | v0.2 |
 | PARAM-FR-03 | Changing a parameter re-runs the affected screens on today's cached data. It makes no new API calls and finishes in under 10 seconds. | Should | v0.2 |
 | PARAM-FR-04 | Default values come from the signal spec. A badge shows "Default" or "Custom (unsaved)", and one control resets every parameter to the default. | Should | v0.2 |
 | PARAM-FR-05 | Parameter sets can be saved as named presets and loaded again. | Could | v0.3 |
@@ -179,7 +179,7 @@ Screens use written rules, but the values are editable on the dashboard. Default
 
 ## 8. Functional requirements by module
 
-The thresholds below are starter values. Exact formulas, lookbacks and edge cases are in docs/04-signal-spec.md. You can tune them there without changing this PRD. Stock modules use the S&P 500 + Nasdaq 100, about 550 tickers.
+The thresholds below are starter values. Exact formulas, lookbacks and edge cases are in the module's file in docs/04-signal-spec/. You can tune them there without changing this PRD. Stock modules use the S&P 500 + Nasdaq 100, about 550 tickers.
 
 ### 8.1 Economic Data (ECON) — top of the dashboard
 
@@ -204,25 +204,25 @@ Answers: which stocks are outperforming with healthy, confirmed trends? Two scre
 
 | ID | Requirement | Priority | Release |
 | --- | --- | --- | --- |
-| MOM-FR-01 | Compute an RS rating 1–99 for every ticker: weighted 3/6/9/12-month return ranked against the universe (IBD-style). | Must | v0.1 |
+| MOM-FR-01 | Screen A: compute an RS rating 1–99 for every ticker: weighted 3/6/9/12-month return ranked against the universe (IBD-style). Screen B uses its own RS ratio instead (MOM-FR-03). | Must | v0.1 |
 | MOM-FR-02 | Screen A (RS + RSI): RS ≥ 80 AND RSI(14) between 50 and 70, or RSI pulling back to 40–50 while in an uptrend. Each result is tagged "strong" or "pullback". | Must | v0.1 |
-| MOM-FR-03 | Screen B (RS + Ichimoku): RS ≥ 80 AND close above the cloud AND Tenkan above Kijun AND the cloud ahead is green. Bonus flag for a fresh breakout above the cloud in the last 5 trading days. | Should | v0.2 |
-| MOM-FR-04 | Tables show ticker, market cap, sector, RS rating, RSI, week % change, distance from 50-day MA, ATR % and earnings date; sorted by RS rating, top 10 per screen. Each tab shows how many stocks it holds. | Must | v0.1 |
+| MOM-FR-03 | Screen B (RS + Ichimoku) runs on completed weekly bars and updates once a week. A **signal candle** is a week in which the 55-week RS ratio vs the S&P 500 index crossed above 1 (that week or the week before) AND the weekly close crossed above the Conversion Line (Tenkan, 9 weeks). A signal stays listed as **New** or **Pending** until a later weekly high reaches the entry (**Triggered**) or a weekly close below the Conversion Line cancels it (**Cancelled**). Stocks with stale data are excluded with a warning. | Should | v0.2 |
+| MOM-FR-04 | Screen A table shows ticker, market cap, sector, RS rating, RSI, week % change, distance from 50-day MA, ATR % and earnings date; sorted by RS rating, top 10. Screen B table shows every New and Pending signal, grouped by sector (the sector with the highest-RS stock first) and sorted by RS within each sector, with status, signal week, weeks pending, RS, RS cross week, close, Conversion Line, distance to entry and earnings date. Each tab shows how many stocks it holds. | Must | v0.1 |
 | MOM-FR-05 | If fewer than 3 stocks qualify, including after parameter changes, the section says so and names them instead of showing a table. | Must | v0.1 |
-| MOM-FR-06 | Both screens show Entry, Exit (SL) and Quantity for every stock. Entry is the last close. Exit (SL) is entry minus 2× ATR for Screen A, or the Kijun line for Screen B. Quantity is risk amount ÷ (entry − exit), rounded down, with the position value beneath it. Exact rules are in the signal spec. This is a planning aid from the owner's rules, not advice. | Should | v0.2 |
+| MOM-FR-06 | Both screens show Entry, Exit (SL) and Quantity for every stock. Screen A: entry is the last close and Exit (SL) is entry minus 2× ATR. Screen B: entry is exactly the signal candle's high (a buy-stop) and Exit (SL) is its low. Quantity is risk amount ÷ (entry − exit), rounded down, with the position value beneath it. Exact rules are in the signal spec. This is a planning aid from the owner's rules, not advice. | Should | v0.2 |
 | MOM-FR-07 | A Position sizing bar takes Capital ($) and Risk per trade (%) as inputs on the dashboard. A change recalculates every quantity at once, without re-running the module. The config file sets the defaults, a typed value overrides them for the session, and the last typed value is saved in a local settings file that is never committed. Guards: capital must be above 0 and risk between 0.25% and 3%, or quantities show "—" with a warning; if entry ≤ stop the quantity shows "—"; a position worth more than capital is flagged "exceeds capital". | Should | v0.2 |
 
-Acceptance: RSI(14) on a fixed test series matches a reference value within 0.1. Only tickers that meet both conditions appear. Given capital $50,000, risk 1%, entry $158.40 and stop $149.21, quantity is 54 (MOM-FR-06).
+Acceptance: RSI(14) on a fixed test series matches a reference value within 0.1. Only tickers that meet both conditions appear. Given capital $50,000, risk 1%, entry $158.40 and stop $149.21, quantity is 54 (MOM-FR-06). Given a Screen B signal candle with high $52.40 and low $48.10, the same inputs give quantity 116, and the signal shows Triggered once a later weekly high reaches $52.40.
 
 ### 8.3 Value – Long Term (VLT)
 
-Answers: which quality companies are trading cheap?
+Answers: which consistently growing, low-debt companies are priced attractively relative to their growth?
 
 | ID | Requirement | Priority | Release |
 | --- | --- | --- | --- |
-| VLT-FR-01 | Screen: PE below sector median, FCF yield ≥ 5%, ROE ≥ 15%, debt/equity < 1, Piotroski F-score ≥ 7. | Should | v0.2 |
-| VLT-FR-02 | Rank passing stocks by a composite value score (definition in the signal spec); show top 10. | Should | v0.2 |
-| VLT-FR-03 | Table shows ticker, market cap, sector, PE vs sector median, FCF yield, ROE, debt/equity, F-score, value score and earnings date. | Should | v0.2 |
+| VLT-FR-01 | Screen: listed US options, interest coverage > 5, 10-year revenue CAGR > 10%, 10-year net income CAGR > 10%, PEG < 1 and Debt/EBITDA ≤ 3. Market cap ≥ $2B comes from the universe filter (PARAM-FR-01). | Should | v0.2 |
+| VLT-FR-02 | Sort passing stocks by market cap, largest first, and show all of them. | Should | v0.2 |
+| VLT-FR-03 | Table shows symbol, name, options, market cap, interest coverage, 10-year growth of revenue, EPS, free cash flow and net income, PEG, operating cash flow, net income, debt to profit, CFO to net profit and earnings date. | Should | v0.2 |
 | VLT-FR-04 | Stocks with negative earnings or missing fundamentals are excluded and counted in the module's warnings. | Should | v0.2 |
 | VLT-FR-05 | If no stock qualifies, the section shows "No stocks match the current parameters" instead of an empty table. | Should | v0.2 |
 
@@ -248,7 +248,7 @@ Answers: which stocks is the market paying a higher (or lower) multiple for, and
 | SECT-FR-02 | Sector rotation chart above the table: four quadrants of RS-Ratio (strength vs SPY, x-axis) against RS-Momentum (y-axis), centred on 100 and labelled Improving, Leading, Weakening and Lagging. Each sector is labelled by sector name and has a dot for this week and a 5-week tail. Hover shows the ETF, both values and the quadrant. Formulas are our own and live in the signal spec; the chart does not use the proprietary "RRG" or "JdK" names. | Should | v0.2 |
 | EARN-FR-01 | Every module table shows each stock's next earnings date and flags dates within 10 trading days. | Should | v0.2 |
 | CONF-FR-01 | Confluence list: stocks passing 2+ module screens, showing which ones; reads module outputs only. | Should | v0.2 |
-| TRACK-FR-01 | Past-picks tracker: 1, 2 and 4-week returns of every flagged stock vs SPY, plus hit rate per module and per parameter set, built from the archive. | Could | v0.3 |
+| TRACK-FR-01 | Past-picks tracker: 1, 2 and 4-week returns of every flagged stock vs SPY, plus hit rate per module and per parameter set, built from the archive. Screen B picks are tracked through their signal events (New, Triggered, Cancelled); see Q19. | Could | v0.3 |
 | AI-FR-01 | AI summary: about 150 words on macro and what the modules show, generated once per trading day from module output JSON only. Shown at the bottom of the page, above the disclaimer. | Could | v0.3 |
 | AI-FR-02 | "Why flagged" note: one line per stock naming the rules it met, generated from rule results. | Could | v0.3 |
 | AI-FR-03 | Every number in AI text must exist in module outputs; no buy/sell language; on failure the AI section shows a plain fallback and the rest loads. | Could | v0.3 |
@@ -284,11 +284,11 @@ The biggest risk is free data: its quality and its limits. To reduce this risk, 
 
 | Dependency | Used by | Fallback |
 | --- | --- | --- |
-| yfinance (prices, market cap, volume, some fundamentals, earnings dates, DXY, MOVE) | MOM, VLT, PER, REG, SECT, EARN, PARAM | Cached last good data, status "partial" or "unavailable"; a missing DXY or MOVE tile shows "unavailable" on its own |
+| yfinance (prices, S&P 500 index, market cap, volume, sector, some fundamentals, earnings dates, DXY, MOVE) | MOM, VLT, PER, REG, SECT, EARN, PARAM | Cached last good data, status "partial" or "unavailable"; a missing DXY or MOVE tile shows "unavailable" on its own |
 | FRED API (macro series, yields, vehicle sales) | ECON | Cached last good value with its as-of date |
 | Official release calendars (BLS, BEA, Census, DOL, Fed) | ECON | "Date not confirmed" |
 | ISM press releases | ECON (PMIs) | Manual monthly entry (ECON-FR-08) |
-| FMP free tier, SEC EDGAR (fundamentals, estimates) | VLT, PER | Module shows "unavailable" |
+| FMP free tier, SEC EDGAR (fundamentals, estimates; VLT needs 10 years of annual statements, more than FMP's free 5 years) | VLT, PER | Module shows "unavailable" |
 | Claude API | AI | Plain fallback text |
 
 **Assumptions and risks**
@@ -298,6 +298,8 @@ The biggest risk is free data: its quality and its limits. To reduce this risk, 
 | Free data is reliable enough for screening | Medium | High | Per-module validation; contract tests; "partial" status | Week 3 data spike |
 | A free ISM PMI source exists | Medium | Low | Manual entry fallback | Week 2 |
 | FMP free tier covers forward EPS estimates for ~550 tickers within its limits | Medium | High | Batch and cache fundamentals weekly; reduce universe for PER if needed | Week 2 spike |
+| A free source covers 10 years of annual financials for ~550 tickers (VLT) | Medium | High | SEC EDGAR as the leading candidate; cache fundamentals weekly | Week 2 spike |
+| Screen B's weekly signal looks stale on weekday visits | Medium | Low | Show the signal week and status on every row; results change only after a completed week | v0.2 UAT |
 | Full refresh fits in 5 minutes | Medium | Medium | Parallel modules; refresh only stale ones | Week 6 timing |
 | Frequent clicks hit API rate limits | Medium | Medium | Daily cache; minimum refresh interval | Week 5 |
 | Release dates shift (holidays, shutdowns) | Low | Medium | Official calendars; "date not confirmed" | Ongoing |
@@ -319,10 +321,10 @@ The owner must decide each of these. Each decision goes in the doc named in the 
 | Q1 | Do the v0.2 and v0.3 gates in section 6 look right? | As written | This PRD | Week 1 |
 | Q2 | Show consensus forecasts next to economic releases? | No in v1.0 (no reliable free source) | Signal spec | Week 2 |
 | Q3 | Keep DXY anywhere (dropped from Economic Data in vision v1.1)? | **Resolved in v1.1:** DXY and MOVE added to the regime banner as context only (REG-FR-01) | This PRD | Week 1 |
-| Q4 | Exact RS rating formula: weights for 3/6/9/12-month returns and how IPOs under 12 months are handled | IBD-style 40/20/20/20; exclude under 12 months | Signal spec | Week 2 |
+| Q4 | Exact RS rating formula: weights for 3/6/9/12-month returns and how IPOs under 12 months are handled | IBD-style 40/20/20/20; exclude under 12 months. Applies to Screen A only (Screen B uses the 55-week RS ratio) | Signal spec | Week 2 |
 | Q5 | Definition of "uptrend" for the RSI pullback case | Close above 50-day MA and 50-day above 200-day | Signal spec | Week 2 |
-| Q6 | Composite value score formula and weights | Equal-weighted percentile ranks of the five metrics | Signal spec | Week 2 |
-| Q7 | Sector median PE: GICS sector from which source? | yfinance sector field | Data dictionary | Week 2 |
+| Q6 | Composite value score formula and weights | **Resolved in v1.2:** no composite score; Value – Long Term sorts by market cap (Spec 1) | Signal spec | Week 2 |
+| Q7 | Sector median PE: GICS sector from which source? | **Resolved in v1.2:** no longer needed for Value – Long Term (Spec 1). Sector for grouping and labels comes from the yfinance sector field | Data dictionary | Week 2 |
 | Q8 | Module runtime: worker processes vs local HTTP services | Worker processes with timeouts | ADR-001 | Week 2 |
 | Q9 | Free ISM PMI source | ISM press release page; manual entry fallback | Data spike | Week 2 |
 | Q10 | How "partial" results (under 95% coverage) are shown and used by the confluence list | Shown with warning; excluded from confluence | This PRD | Week 3 |
@@ -331,9 +333,10 @@ The owner must decide each of these. Each decision goes in the doc named in the 
 | Q13 | Should DXY or MOVE ever feed the regime rule? | No in v1.0; context only | Signal spec | Week 2 |
 | Q14 | "Fewer than 3" rule for PE Re-rating and Value – Long Term lists | Show the table for 1 or more stocks; "No stocks match" for none (PER-FR-05, VLT-FR-05) | This PRD | Week 3 |
 | Q15 | Release for entry, exit and quantity (MOM-FR-06/07) | v0.2 | This PRD | Week 3 |
-| Q16 | Entry price definition: last close, breakout level or limit price? | Last close | Signal spec | Week 2 |
-| Q17 | Do modules return every passing stock, or only the top N, so universe filters can apply afterwards? | Every passing stock; the dashboard shows the top N | ADR-001 | Week 2 |
+| Q16 | Entry price definition: last close, breakout level or limit price? | **Resolved in v1.2:** Screen A last close; Screen B the signal candle's high (Spec 4) | Signal spec | Week 2 |
+| Q17 | Do modules return every passing stock, or only the top N, so universe filters can apply afterwards? | Every passing stock; the dashboard shows the top N where a module has one. Specs 1 and 4 show all rows | ADR-001 | Week 2 |
 | Q18 | Default values for price and average daily dollar volume filters | $10 price; $20M average daily volume | Signal spec | Week 2 |
+| Q19 | Past-picks tracker for Screen B: measure returns from the signal week's close, or from the trigger at the entry price? How are cancelled signals counted? | From the trigger at the entry price; cancelled signals counted separately, with no return | This PRD | Week 10 |
 
 ## 12. Glossary
 
@@ -341,27 +344,33 @@ The owner must decide each of these. Each decision goes in the doc named in the 
 | --- | --- |
 | As-of time | The date and time of the latest data a module used; for prices, the last completed trading session |
 | ATR | Average True Range: average daily price range, used for volatility and the Screen A stop |
+| CAGR | Compound annual growth rate over a period, for example 10 years |
 | Confluence | A stock passing screens in 2 or more modules |
+| Conversion Line (Tenkan-sen) | Ichimoku's fast line: (highest high + lowest low) ÷ 2 over the last 9 bars; Screen B uses 9 weeks |
 | Core module | One of the four independent modules: Economic Data, Momentum, Value – Long Term, Value – PE Re-rating |
 | De-rating | Forward PE falling 15%+ vs its 52-week median |
 | DXY | US Dollar Index: the dollar's value against six major currencies |
-| Entry | Reference buy price for sizing; the last close unless the signal spec says otherwise |
-| Exit (SL) | Stop-loss price used for sizing: entry minus 2× ATR (Screen A) or the Kijun line (Screen B) |
-| F-score (Piotroski) | 0–9 score of financial strength from nine accounting tests |
+| Debt / EBITDA | Total debt ÷ earnings before interest, tax, depreciation and amortisation; about how many years of earnings repay the debt |
+| Entry | Reference buy price for sizing: the last close (Screen A) or the signal candle's high (Screen B) |
+| Exit (SL) | Stop-loss price used for sizing: entry minus 2× ATR (Screen A) or the signal candle's low (Screen B) |
 | Failure isolation | One module failing never stops another from loading |
-| Ichimoku cloud | Trend indicator; "above the cloud" means close above both cloud edges; Tenkan and Kijun are its fast and slow lines |
+| Interest coverage | EBIT ÷ interest expense; how many times earnings cover interest payments |
 | MOVE index | Expected volatility of US Treasury yields, priced from options; the bond market's VIX |
 | Output contract | The versioned JSON schema every module returns |
 | Parameter set | The values used for universe filters and module thresholds in a run; "Default" comes from the signal spec, otherwise "Custom" or a named preset |
 | Partial | Module status when under 95% of the universe was fetched |
+| PEG ratio | PE ÷ EPS growth rate (%); below 1 means the price is low relative to growth |
 | Position sizing | Quantity = (capital × risk %) ÷ (entry − exit), rounded down |
 | Quadrant | A sector's place on the rotation chart: Improving, Leading, Weakening or Lagging |
 | Re-rating | Forward PE rising 15%+ vs its 52-week median; "healthy" when EPS estimates also rise, "stretched" when they don't |
 | Regime | Overall market state (Risk-on, Caution, Risk-off) from SPY moving averages and VIX |
-| RS rating | 1–99 rank of a stock's weighted 12-month performance vs the universe |
+| RS rating | 1–99 rank of a stock's weighted 12-month performance vs the universe (Screen A) |
+| RS ratio (55-week) | A stock's 55-week price change ÷ the S&P 500 index's; above 1 means it is beating the index (Screen B) |
 | RS-Ratio / RS-Momentum | A sector's strength vs SPY, and the rate of change of that strength, each scaled around 100 |
 | RSI(14) | 14-day Relative Strength Index, 0–100 momentum oscillator |
-| Rule-spec version | Version of docs/04-signal-spec.md used for a run |
+| Rule-spec version | Version of the module's signal spec in docs/04-signal-spec/ used for a run |
+| Signal candle | The weekly bar on which a Screen B signal fired; its high is the entry and its low the stop |
+| Signal status | A Screen B signal's state: New (fired last week), Pending (waiting for entry), Triggered (entry reached) or Cancelled (closed below the Conversion Line first) |
 | Snapshot | A dated, archived copy (HTML + JSON) of one dashboard refresh |
 | Supporting module | Independent module that adds context: regime, sector rotation, earnings flags, COT |
 | Universe | S&P 500 + Nasdaq 100 constituents, about 550 tickers, before universe filters |
@@ -373,5 +382,6 @@ The owner must decide each of these. Each decision goes in the doc named in the 
 | --- | --- | --- |
 | 2026-10-25 | 1.0 | First draft, aligned with vision v1.1, persona v1.0 and Product Roadmap v1.1 |
 | 2026-10-28 | 1.1 | Wireframe review. Added stock selection parameters (PARAM-FR-01 to 06), entry, exit and quantity with runtime sizing inputs (MOM-FR-06 rewritten, MOM-FR-07), sector rotation chart (SECT-FR-02), plain-language definitions (DASH-FR-07), and empty-list rules (PER-FR-05, VLT-FR-05). DXY and MOVE added to the regime banner as context only (resolves Q3). "What's new" labels each ticker's source; AI summary moved above the disclaimer. Contract, snapshots and NFRs record the parameter set and keep sizing inputs private (NFR-15). New scenarios S7–S8, risks, glossary terms and open questions Q12–Q18 |
+| 2026-10-29 | 1.2 | Aligned with signal specs 1 and 4. Screen B rewritten as the owner's weekly screen: 55-week RS ratio cross plus a fresh close above the Conversion Line, entry and stop at the signal candle's high and low, New / Pending / Triggered / Cancelled status, grouped by sector (MOM-FR-01, 03, 04, 06; DASH-FR-05; TRACK-FR-01). Value – Long Term rewritten to Spec 1's growth, PEG and debt rules, sorted by market cap (VLT-FR-01 to 03). Parameter panels updated (PARAM-FR-02). Prices are split-adjusted only (PLAT-FR-07). Resolved Q6, Q7 and Q16; added Q19, two risks and glossary terms; removed the F-score and Ichimoku cloud entries |
 
 *Disclaimer: personal research project, not investment advice.*
