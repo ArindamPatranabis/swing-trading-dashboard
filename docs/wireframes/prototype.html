@@ -114,7 +114,6 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
   var QCOL = { Leading: '#2E7D32', Weakening: '#B7791F', Improving: '#2F56C6', Lagging: '#C0392B' };
   var CAPS = { ALPH: 412, BRVO: 38.5, CHRL: 4.2, DLTA: 96.1, ECHO: 1.6, FXTR: 22.8, GLFX: 2.4, KILO: 57.3, ICON: 188, MIKE: 31.0, NOVA: 14.7, OSCR: 9.6, PAPA: 1.4, QBEC: 18.2, SIER: 6.9, TANG: 27.5, UNIF: 11.3, VIKN: 3.1 };
   var ENTRY = { ALPH: 158.40, BRVO: 96.75, CHRL: 66.20, DLTA: 221.30, ECHO: 50.60, FXTR: 128.90, GLFX: 74.10, KILO: 112.50 };
-  var KIJUN = { ALPH: 147.60, BRVO: 91.20, GLFX: 69.85, KILO: 105.30 };
   var MOM_A = [
     { t: 'ALPH', sector: 'Technology', rs: 97, rsi: '64.2', tag: 'Strong', wk: '+3.1%', ma: '+8.4%', atr: 2.9, earn: 'Wed Nov 4', soon: true },
     { t: 'BRVO', sector: 'Industrials', rs: 94, rsi: '58.7', tag: 'Strong', wk: '+1.8%', ma: '+5.2%', atr: 2.1, earn: 'Thu Nov 19', soon: false },
@@ -123,12 +122,22 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     { t: 'ECHO', sector: 'Financials', rs: 86, rsi: '44.8', tag: 'Pullback', wk: '−0.9%', ma: '+1.1%', atr: 1.8, earn: 'Fri Jan 15', soon: false },
     { t: 'FXTR', sector: 'Consumer Disc.', rs: 82, rsi: '55.5', tag: 'Strong', wk: '+0.7%', ma: '+3.9%', atr: 2.7, earn: 'Thu Nov 12', soon: false }
   ];
+  // Screen B: weekly signal candles (Spec 4). Last completed week = Fri Oct 23.
   var MOM_B = [
-    { t: 'ALPH', sector: 'Technology', rs: 97, brk: 'Fresh · 3 days ago', earn: 'Wed Nov 4', soon: true },
-    { t: 'BRVO', sector: 'Industrials', rs: 94, brk: '—', earn: 'Thu Nov 19', soon: false },
-    { t: 'GLFX', sector: 'Materials', rs: 88, brk: 'Fresh · 1 day ago', earn: 'Tue Nov 10', soon: false },
-    { t: 'KILO', sector: 'Industrials', rs: 84, brk: '—', earn: 'Mon Nov 23', soon: false }
+    { t: 'ALPH', sector: 'Technology', status: 'Pending', wk: 'Oct 16', pend: 1, rs: 1.142, rsPrev: 0.996, rsCross: 'Oct 16', close: 158.40, cl: 151.90, hi: 160.20, lo: 149.80, earn: 'Wed Nov 4', soon: true },
+    { t: 'NOVA', sector: 'Technology', status: 'New', wk: 'Oct 23', pend: 0, rs: 1.031, rsPrev: 1.004, rsCross: 'Oct 16', close: 47.90, cl: 46.10, hi: 48.60, lo: 45.20, earn: 'Wed Dec 9', soon: false },
+    { t: 'KILO', sector: 'Industrials', status: 'New', wk: 'Oct 23', pend: 0, rs: 1.098, rsPrev: 0.987, rsCross: 'Oct 23', close: 112.50, cl: 108.40, hi: 114.60, lo: 106.90, earn: 'Mon Nov 23', soon: false },
+    { t: 'BRVO', sector: 'Industrials', status: 'Pending', wk: 'Oct 9', pend: 2, rs: 1.012, rsPrev: 0.991, rsCross: 'Oct 9', close: 96.75, cl: 94.30, hi: 98.40, lo: 92.10, earn: 'Thu Nov 19', soon: false },
+    { t: 'GLFX', sector: 'Materials', status: 'New', wk: 'Oct 23', pend: 0, rs: 1.067, rsPrev: 0.982, rsCross: 'Oct 23', close: 74.10, cl: 71.60, hi: 75.90, lo: 70.20, earn: 'Tue Nov 10', soon: false },
+    { t: 'SIER', sector: 'Materials', status: 'Pending', wk: 'Oct 16', pend: 1, rs: 1.020, rsPrev: 0.994, rsCross: 'Oct 16', close: 40.10, cl: 39.20, hi: 41.30, lo: 38.60, earn: 'Thu Nov 12', soon: false }
   ];
+  // group by sector (sector with the highest-RS stock first), RS high to low within each sector
+  function groupBySector(rows) {
+    var g = {};
+    rows.forEach(function (x) { (g[x.sector] = g[x.sector] || []).push(x); });
+    return Object.keys(g).map(function (k) { return { sector: k, rows: g[k].sort(function (a, b) { return b.rs - a.rs; }) }; })
+      .sort(function (a, b) { return b.rows[0].rs - a.rows[0].rs; });
+  }
   var PER = {
     healthy: { label: 'Healthy re-rating', rule: function (t) { return 'Healthy: forward PE up ' + t + '% or more vs its 52-week median, and forward EPS estimates rising.'; }, rows: [
       { t: 'ALPH', sector: 'Technology', pe: '31.6', med: '26.4', chg: 19.7, eps: 'Rising', earn: 'Wed Nov 4', soon: true },
@@ -222,8 +231,8 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     var errs = [];
     if (!capOk) errs.push('Enter a capital amount above $0.');
     if (!riskOk) errs.push('Risk per trade must be between 0.25% and 3%.');
-    function size(x, entry, sl, basis) {
-      var o = { entry: money(entry), sl: money(sl), basis: basis, qty: '—', pos: '', over: false };
+    function size(x, entry, sl, basis, ebasis) {
+      var o = { entry: money(entry), ebasis: ebasis || '', sl: money(sl), basis: basis, qty: '—', pos: '', over: false };
       var per = entry - sl;
       if (per <= 0) { o.pos = 'Entry at or below stop'; return o; }
       if (!inputsOk) { o.pos = 'Check sizing inputs'; return o; }
@@ -232,11 +241,11 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
       return o;
     }
     function sizeCells(z) {
-      return '<span>' + z.entry + '</span><span class="col"><span>' + z.sl + '</span><span class="sub">' + z.basis + '</span></span>' +
+      return (z.ebasis ? '<span class="col"><span>' + z.entry + '</span><span class="sub">' + z.ebasis + '</span></span>' : '<span>' + z.entry + '</span>') + '<span class="col"><span>' + z.sl + '</span><span class="sub">' + z.basis + '</span></span>' +
         '<span class="col"><strong>' + z.qty + '</strong><span class="sub">' + z.pos + '</span>' + when(z.over, '<span class="pill">exceeds capital</span>') + '</span>';
     }
     var momA = MOM_A.filter(function (x) { return inUni(x) && x.rs >= rsMin; });
-    var momB = MOM_B.filter(function (x) { return inUni(x) && x.rs >= rsMin; });
+    var momB = MOM_B.filter(inUni);
     var cur = S.momTab === 'B' ? momB : momA;
     function perFilter(rows) { return rows.filter(function (x) { return inUni(x) && Math.abs(x.chg) >= perThr; }); }
     var perRows = perFilter(PER[S.perTab].rows);
@@ -258,8 +267,8 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
     h += when(v3, '<div style="display:flex;flex-direction:column;gap:10px;background:#E7EEF9;border:1px solid #B9CBEB;border-radius:8px;padding:12px 16px;font-size:14px;color:#1D3F8A">' +
       '<div class="row" style="gap:8px 16px"><strong>Since your last visit (Wed Oct 21)</strong>' + tag('DASH-FR-05 · v0.3', 'margin-left:auto') + '</div>' +
       '<div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px 12px;align-items:start">' +
-      '<strong style="padding-top:3px">New</strong><span class="row"><span class="wn"><strong>DLTA</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>FXTR</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>GLFX</strong> · Momentum (RS + Cloud)</span><span class="wn"><strong>KILO</strong> · PE Re-rating (healthy)</span></span>' +
-      '<strong style="padding-top:3px">Dropped</strong><span class="row"><span class="wn"><strong>WHSK</strong> · Value Long Term</span><span class="wn"><strong>RMBL</strong> · Momentum (RS + RSI)</span></span>' +
+      '<strong style="padding-top:3px">New</strong><span class="row"><span class="wn"><strong>DLTA</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>FXTR</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>GLFX</strong> · Momentum (RS + Ichimoku) · new signal</span><span class="wn"><strong>KILO</strong> · PE Re-rating (healthy)</span></span>' +
+      '<strong style="padding-top:3px">Dropped</strong><span class="row"><span class="wn"><strong>WHSK</strong> · Value Long Term</span><span class="wn"><strong>RMBL</strong> · Momentum (RS + RSI)</span><span class="wn"><strong>WREN</strong> · Momentum (RS + Ichimoku) · triggered</span><span class="wn"><strong>YOKE</strong> · Momentum (RS + Ichimoku) · cancelled</span></span>' +
       '<strong style="padding-top:3px">Releases</strong><span class="row"><span class="wn"><strong>Jobless claims</strong> · Economic Data · Thu Oct 22</span></span></div></div>');
 
     // economic data
@@ -327,15 +336,16 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
 
     // momentum
     var MC = 'minmax(60px,0.7fr) minmax(130px,1.4fr) 50px 70px 96px 70px 100px 64px minmax(130px,1.2fr) 80px 100px 110px';
-    var BC = '70px minmax(140px,1.4fr) 50px 1fr 1fr 1fr 1.1fr minmax(120px,1.1fr) 80px 100px 110px';
+    var BC = '80px 100px 80px minmax(170px,1.3fr) minmax(150px,1.2fr) 80px minmax(150px,1fr) 100px 100px 110px';
     var momAvail = !mom.unavailable;
     var showFew = momAvail && (S.momTab === 'A' || v2) && (mom.few || (mom.table && cur.length < 3));
     h += '<section class="card" id="mom"><div class="sh"><h2 class="st">Momentum</h2>' + mom.chip + '<span class="meta">As of ' + asOf + ' · S&amp;P 500 + Nasdaq 100 (about 550 tickers)</span>' + tag('v0.1') + tag('MOM-FR-01 to 07') + '</div>' +
       '<p class="q">Which stocks are outperforming with healthy, confirmed trends?</p>' +
-      when(v2, details('mom', 'Momentum parameters · RS ' + rsMin + '+ · market cap $' + minCap + 'B+',
-        field('RS rating at least', 'rsMin', 'type="number" min="1" max="99" step="1"', 120) +
-        field('RSI strong band', '50–70', 'type="text"', 120, true) + field('RSI pullback band', '40–50', 'type="text"', 120, true) +
-        field('Screen B breakout window (days)', '5', 'type="number"', 120, true) + field('Show top', '10', 'type="number"', 100, true) +
+      when(v2, details('mom', 'Momentum parameters · Screen A RS ' + rsMin + '+ · Screen B RS 55 weeks · market cap $' + minCap + 'B+',
+        field('Screen A · RS rating at least', 'rsMin', 'type="number" min="1" max="99" step="1"', 120) +
+        field('Screen A · RSI strong band', '50–70', 'type="text"', 120, true) + field('Screen A · RSI pullback band', '40–50', 'type="text"', 120, true) +
+        field('Screen A · show top', '10', 'type="number"', 100, true) +
+        field('Screen B · RS length (weeks)', '55', 'type="number" min="10" step="1"', 120, true) +
         '<button class="btn" type="button">Apply · re-run from cached prices</button>')) +
       when(v2 && momAvail && S.regime === 'Risk-off', '<div class="warn"><strong>Risk-off market.</strong> Momentum setups fail more often when the market is weak. ' + tag('REG-FR-02') + '</div>') +
       when(mom.partial, '<div class="warn"><strong>Partial:</strong> 512 of 550 tickers fetched (93%, below the 95% threshold). Lists may be missing stocks, and this module is left out of the confluence list.</div>') +
@@ -363,19 +373,29 @@ a{color:#1D4ED8}a:hover{color:#1E3A8A}
             return '<div class="tr" style="grid-template-columns:' + MC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.rs + '</span><span>' + x.rsi + '</span><span>' + tag(x.tag) + '</span><span>' + x.wk + '</span><span>' + x.ma + '</span><span>' + x.atr.toFixed(1) + '%</span>' + earnCell(x, v2) + sizeCells(z) + '</div>';
           }).join('') + '</div></div>';
       } else if (mom.table && S.momTab === 'B' && v2) {
-        h += '<p class="q">RS ' + rsMin + ' or higher, close above the cloud, Tenkan above Kijun, and the cloud ahead is green. Breakout flag = closed above the cloud in the last 5 trading days.</p>' +
-          '<div class="scroll"><div style="min-width:1240px"><div class="tr th" style="grid-template-columns:' + BC + '"><span>Ticker</span><span>Sector</span><span>RS</span><span>Close vs cloud</span><span>Tenkan vs Kijun</span><span>Cloud ahead</span><span>Breakout</span><span>Earnings</span><span>Entry</span><span>Exit (SL)</span><span>Quantity</span></div>' +
-          momB.map(function (x) {
-            var z = size(x, ENTRY[x.t], KIJUN[x.t], 'Kijun line');
-            return '<div class="tr" style="grid-template-columns:' + BC + '">' + tickerCell(x.t) + '<span>' + x.sector + '</span><span>' + x.rs + '</span><span>Above</span><span>Tenkan above</span><span>Green</span><span>' + x.brk + '</span>' + earnCell(x, v2) + sizeCells(z) + '</div>';
-          }).join('') + '</div></div>';
+        h += '<p class="q">Weekly screen on the last completed week (ending Fri Oct 23). A <strong>signal candle</strong> is a week where RS(55) vs the S&amp;P 500 crossed above 1 (that week or the week before) and the weekly close crossed above the <span class="def" title="Ichimoku Conversion Line (Tenkan-sen): (highest high + lowest low) ÷ 2 over the last 9 weeks.">Conversion Line</span>. A signal stays listed until a weekly high reaches the entry (Triggered) or a weekly close below the Conversion Line cancels it. Grouped by sector, strongest sector first.</p>' +
+          '<div class="scroll"><div style="min-width:1240px"><div class="tr th" style="grid-template-columns:' + BC + '"><span>Ticker</span><span>Status</span><span>Signal week</span><span>RS(55)</span><span>Close vs Conv. Line</span><span>To entry</span><span>Earnings</span><span>Entry</span><span>Exit (SL)</span><span>Quantity</span></div>' +
+          groupBySector(momB).map(function (g) {
+            return '<div class="tr" style="grid-template-columns:1fr;background:#F7F7F5"><strong>' + g.sector + ' <span class="sub">· ' + g.rows.length + ' signal' + (g.rows.length === 1 ? '' : 's') + '</span></strong></div>' +
+              g.rows.map(function (x) {
+                var z = size(x, x.hi, x.lo, 'Signal low', 'Signal high');
+                var st = x.status === 'New' ? '<span class="pill">New</span>' : '<span class="col">' + tag('Pending') + '<span class="sub">' + x.pend + ' week' + (x.pend === 1 ? '' : 's') + '</span></span>';
+                return '<div class="tr" style="grid-template-columns:' + BC + '">' + tickerCell(x.t) + '<span>' + st + '</span><span>' + x.wk + '</span>' +
+                  '<span class="col"><strong>' + x.rs.toFixed(3) + '</strong><span class="sub">crossed ' + x.rsCross + ' · prev ' + x.rsPrev.toFixed(3) + '</span></span>' +
+                  '<span class="col"><span>' + money(x.close) + ' vs ' + money(x.cl) + '</span><span class="sub">+' + ((x.close / x.cl - 1) * 100).toFixed(2) + '% above</span></span>' +
+                  '<span>+' + ((x.hi / x.close - 1) * 100).toFixed(2) + '%</span>' + earnCell(x, v2) + sizeCells(z) + '</div>';
+              }).join('');
+          }).join('') + '</div></div>' +
+          '<div class="legend"><span>Dropped off this week: <strong>WREN</strong> triggered (weekly high reached the entry) · <strong>YOKE</strong> cancelled (closed below the Conversion Line)</span><span>Updates once a week; on weekdays the list stays the same</span><span>Stocks with stale data are left out and listed in warnings</span></div>';
       } else if (S.momTab === 'B' && !v2) {
         h += '<div class="soon"><strong style="color:#1F1F1F">Screen B · RS + Ichimoku</strong><span>Coming soon</span>' + tag('MOM-FR-03 · v0.2', 'margin-left:auto') + '</div>';
       }
       h += when(v3 && mom.table, '<div style="border:1px dashed #A8A8A3;border-radius:6px;padding:12px 14px;font-size:13px;color:#4A4A46;background:#FAFAF8;display:flex;flex-direction:column;gap:4px">' +
-        '<strong style="color:#1F1F1F">Why flagged ' + tag('AI-FR-02 · v0.3') + '</strong><span>ALPH: RS 97 (80 or higher); RSI 64.2 (between 50 and 70).</span><span>CHRL: RS 91; RSI 46.3, pulling back to 40–50 while in an uptrend.</span></div>') +
+        '<strong style="color:#1F1F1F">Why flagged ' + tag('AI-FR-02 · v0.3') + '</strong>' +
+        (S.momTab === 'B' ? '<span>KILO: RS(55) crossed above 1 in the week of Oct 23 (0.987 to 1.098); the weekly close of $112.50 crossed above the Conversion Line ($108.40).</span><span>ALPH: signal from the week of Oct 16 is still pending; no weekly high has reached the $160.20 entry and no close has fallen below the Conversion Line.</span>'
+          : '<span>ALPH: RS 97 (80 or higher); RSI 64.2 (between 50 and 70).</span><span>CHRL: RS 91; RSI 46.3, pulling back to 40–50 while in an uptrend.</span>') + '</div>') +
         '<div class="legend"><span>Ticker opens an external chart (DASH-FR-06, v0.2)</span>' + when(v2, '<span><span class="pill">within 10 days</span> earnings inside 10 trading days (EARN-FR-01)</span>') +
-        '<span>Entry = last close · Exit (SL) = entry minus 2× ATR (Screen A) or the Kijun line (Screen B) · rules: signal spec</span><span>Planning aid from your own rules, not advice</span></div>';
+        '<span>Screen A: entry = last close, exit (SL) = entry minus 2× ATR · Screen B: entry = signal candle high (buy-stop), exit (SL) = signal candle low · rules: signal spec</span><span>Planning aid from your own rules, not advice</span></div>';
     }
     h += '</section>';
 

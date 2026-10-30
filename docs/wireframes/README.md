@@ -1,11 +1,12 @@
 # Wireframes · Swing Trading Dashboard
 
-A low-fidelity, clickable wireframe of the dashboard. It goes with [PRD v1.1](../03-prd.md) and uses sample data only (the tickers are fictional).
+A low-fidelity, clickable wireframe of the dashboard. It goes with [PRD v1.2](../03-prd.md) and uses sample data only (the tickers are fictional).
 
 | File | What it is |
 | --- | --- |
 | [prototype.html](prototype.html) | Clickable prototype in a single self-contained file. It needs no network or build step: download it and open it in any browser. |
 | [dashboard.png](dashboard.png) | Main page at release v1.0, default parameters, all modules OK |
+| [momentum-screen-b.png](momentum-screen-b.png) | Momentum Screen B (RS + Ichimoku, weekly): New and Pending signals grouped by sector, with entry at the signal candle high and exit at its low ([Spec 4](../04-signal-spec/04-rs-ichimoku.md)) |
 | [archive.png](archive.png) | Snapshot archive: open a past refresh by date |
 | [states.png](states.png) | One section in six states (ok, partial, unavailable, fewer than 3, coming soon, risk-off) |
 
@@ -23,7 +24,7 @@ The dark bar at the top holds the **prototype controls**. They aren't part of th
 These parts of the page itself respond to clicks and typing:
 
 - Momentum Screen A / B tabs and the PE Re-rating list tabs
-- **Stock selection parameters**: market cap at least ($B), plus RS minimum, PE change % and F-score minimum in each section's parameter panel. Tables, tab counts and empty states update as you type.
+- **Stock selection parameters**: market cap at least ($B), plus Screen A's RS minimum, PE change % and F-score minimum in each section's parameter panel. Screen B responds to the market-cap filter only; its RS length field is shown but not wired. Tables, tab counts and empty states update as you type.
 - **Position sizing**: Capital ($) and Risk per trade (%). Entry, Exit (SL) and Quantity recalculate, and positions larger than capital are flagged.
 - Hovering an underlined indicator or market tile shows a plain-language definition.
 - The Archive link and snapshot list
@@ -42,7 +43,7 @@ Fields marked *not wired in wireframe* show the intended control but don't chang
 | Regime banner with DXY and MOVE | REG-FR-01, REG-FR-02 |
 | Sector rotation chart and table | SECT-FR-01, SECT-FR-02 |
 | Stock selection parameters | PARAM-FR-01 to 06 |
-| Momentum screens, entry / exit / quantity, sizing inputs | MOM-FR-01 to 07 |
+| Momentum screens, entry / exit / quantity, sizing inputs | MOM-FR-01 to 07 (Screen B per PRD v1.2 and Spec 4) |
 | Value · PE Re-rating | PER-FR-01 to 05 |
 | Value · Long Term | VLT-FR-01 to 05 |
 | Earnings flags | EARN-FR-01 |
