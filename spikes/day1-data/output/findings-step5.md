@@ -9,3 +9,9 @@
   Adapter must merge the 3 revenue concepts, one value per fiscal year.
 - BRK-B: no EarningsPerShareDiluted. Find Berkshire's EPS concept next.
 - Later: interest coverage is not meaningful for banks (JPM).
+
+## Decision (2026-11-04): symbols without EDGAR diluted EPS
+- General rule, no per-symbol special cases: if EDGAR has no EarningsPerShareDiluted,
+  the symbol is excluded with exclusion_reason "EPS not reported in EDGAR".
+- BRK-B is excluded by this rule (it tags EPS in us-gaap only up to 2013, per Class A share).
+- Revisit if the full-universe run excludes more than a handful of symbols.
