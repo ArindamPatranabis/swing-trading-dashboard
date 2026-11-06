@@ -1,0 +1,15 @@
+[project]
+name = "swing-trading-dashboard"
+version = "0.1.0"
+description = "Swing trading research dashboard - workspace root (not a package)"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["contract/*"]
+
+[dependency-groups]
+dev = ["pytest>=8"]
